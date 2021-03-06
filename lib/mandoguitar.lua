@@ -4,10 +4,12 @@ local MusicUtil = require "musicutil"
 local mxsamples=include("mx.samples/lib/mx.samples")
 
 
-engine.name="MxSamples"
+engine.name="MxSamples" -- default engine
 
 local mx=mxsamples:new()
 local Mandoguitar={}
+local divisions={1,2,4,6,8,12,16}
+local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth"}
 
 function Mandoguitar:new(args)
   local m=setmetatable({},{__index=Mandoguitar})
@@ -61,11 +63,11 @@ function Mandoguitar:new(args)
       division=8,-- 8 = quartner notes
       is_playing=false,
       is_recording=false,
-      in_menu=false,
       steps={},
       step=0,
       step_val=0,
       pitch_mod_i=5,
+      note_on={},
     }
   end
 
@@ -76,7 +78,6 @@ function Mandoguitar:new(args)
     ppqn=48
   })
   m.timers={}
-  local divisions = {1,2,4,6,8,12,16}
   for _,division in ipairs(divisions) do
     m.timers[division]={}
     m.timers[division].lattice=m.lattice:new_pattern{
@@ -99,14 +100,69 @@ function Mandoguitar:new(args)
   m.grid_refresh:start()
 
   -- setup scale 
-  local scale_names = {}
+  m.scale_names = {}
   for i = 1, #MusicUtil.SCALES do
-    table.insert(scale_names, string.lower(MusicUtil.SCALES[i].name))
+    table.insert(m.scale_names, string.lower(MusicUtil.SCALES[i].name))
   end
-  tab.print(scale_names)
-  m.note_scale = MusicUtil.generate_scale_of_length(24, scale_names[1], 128)
 
+  m:setup_params()
+  m:build_scale()
   return m
+end
+
+function Mandoguitar:setup_params()
+  local param_names = {"scale","root","tuning","arp","latch","division"}
+  
+  self.engine_options = {"MxSamples","PolyPerc"}
+  self.engine_loaded = true
+  params:add_group("MANDOGUITAR",6*2+3)
+  params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options}
+  params:add{type='binary',name='change engine',id='change engine',behavior='trigger',action=function(v)
+    local name = self.engine_options[params:get("mandoengine")]
+    print("loading "..name)
+    self.engine_loaded = false
+    engine.load(name, function()
+      self.engine_loaded = true
+      print("loaded "..name)
+    end)
+    engine.name=name
+  end}
+  params:add_separator("voices")
+  params:add{type="number",id="voice",name="voice",min=1,max=2,default=1,action=function(v)
+    for _, param_name in ipairs(param_names) do
+      params:show(v..param_name)
+      params:hide((3-v)..param_name)
+    end
+    _menu.rebuild_params()
+  end}
+  for i=1,self.num_voices do 
+    params:add{type="option",id=i.."scale",name ="scale",options=self.scale_names,default=1,action=function(v)
+      self:build_scale()
+    end}
+    params:add{type="number",id=i.."root",name="root",min=0,max=36,default=24,formatter=function(param)
+       return MusicUtil.note_num_to_name(param:get(), true)
+    end,action=function(v)
+      self:build_scale()
+    end}
+    params:add{type="number",id=i.."tuning",name="string tuning",min=0,max=7,default=5,formatter=function(param)
+       return "+"..param:get()
+    end,action=function(v)
+      self:build_scale()
+    end}
+    params:add{type="option",id=i.."arp",name="arp",options={"off","on"}}
+    params:add{type="option",id=i.."latch",name="latch",options={"off","on"},default=2}
+    params:add{type="option",id=i.."division",name="division",options=division_names,default=5}
+  end
+  for _, param_name in ipairs(param_names) do
+    params:hide("2"..param_name)
+  end
+end
+
+function Mandoguitar:build_scale()
+  for i=1,2 do 
+    self.voices[i].scale = MusicUtil.generate_scale_of_length(params:get(i.."root"), self.scale_names[params:get(i.."scale")], 128)
+    self.voices[i].string = params:get(i.."tuning") -- 5 note intervals
+  end
 end
 
 function Mandoguitar:toggle_grid64_side()
@@ -184,25 +240,16 @@ function Mandoguitar:get_visual()
   -- clear visual, decaying the ntoes
   for row=1,8 do
     for col=1,self.grid_width do
-      local voice = math.floor(col/9)+1
-      if row < 8 and not self.voices[voice].in_menu then 
-        if self.visual[row][col] > 0 then 
-          self.visual[row][col] = self.visual[row][col] - 1
-          if self.visual[row][col] < 0 then 
-            self.visual[row][col] = 0
-          end
+      if self.visual[row][col] > 0 then 
+        self.visual[row][col] = self.visual[row][col] - 1
+        if self.visual[row][col] < 0 then 
+          self.visual[row][col] = 0
         end
-      else
-        self.visual[row][col]=0
       end
     end
   end
 
-  -- show if in menu
   for i=1,self.num_voices do
-    if self.voices[i].in_menu then 
-      self.visual[8][1+8*(i-1)] = 15
-    end
   end
 
   -- illuminate currently pressed button
@@ -235,22 +282,7 @@ function Mandoguitar:key_press(row,col,on)
     end
   end
 
-  if row == 8 and (col==1 or col==9) and on then
-    -- toggle menu
-    self:toggle_menu(col)
-  elseif (col < 9 and self.voices[1].in_menu) or (col >= 9 and self.voices[2].in_menu) then 
-    -- do menu stuff
-  else
-    self:press_note(row,col,on)
-  end
-end
-
-function Mandoguitar:toggle_menu(col)
-  local voice = 1
-  if col > 8 then 
-    voice = 2
-  end
-  self.voices[voice].in_menu = not self.voices[voice].in_menu 
+  self:press_note(row,col,on)
 end
 
 function Mandoguitar:press_note(row,col,on)
@@ -259,11 +291,63 @@ function Mandoguitar:press_note(row,col,on)
     col = col - 8
     voice = 2
   end
-  local note = self.note_scale[4*(col-1)+(9-row)]
-  if on then 
-    mx:on({name="tatak piano",midi=note,velocity=120})
-  else
-    mx:off({name="tatak piano",midi=note})
+  local note = self.voices[voice].scale[(self.voices[voice].string-1)*(col-1)+(9-row)]
+  if on then
+    if params:get(voice.."latch")==2 then 
+      -- reset if all buttons are off
+      local num_on=0
+      for k,_ in pairs(self.pressed_buttons) do
+        _,col0=k:match("(%d+),(%d+)")
+        col0 = tonumber(col0)
+        if col0 <= 8 and voice == 1 then 
+          num_on = num_on + 1
+        elseif col0 >= 9 and voice == 2 then 
+          num_on = num_on + 1
+        end
+      end
+      if num_on<=1 then 
+         self.voices[voice].note_on = {}
+      end
+    end
+    self.voices[voice].note_on[note] = self:current_time()
+    tab.print(self:notes_playing(voice))
+  elseif params:get(voice.."latch")==1 then
+    self.voices[voice].note_on[note] = nil
+  end
+  self:engine_play(note,on)
+end
+
+function Mandoguitar:notes_playing(voice)
+  sortFunction = function(a, b) return a < b end
+  local tbl = self.voices[voice].note_on
+  local keys = {}
+  for key in pairs(tbl) do
+    table.insert(keys, key)
+  end
+
+  table.sort(keys, function(a, b)
+    return sortFunction(tbl[a], tbl[b])
+  end)
+
+  return keys
+end
+
+function Mandoguitar:engine_play(note,on)
+  if not self.engine_loaded then 
+    do return end 
+  end
+
+  if self.engine_options[params:get("mandoengine")] == "MxSamples" then
+    if on then 
+      mx:on({name="tatak piano",midi=note,velocity=120})
+    else
+      mx:off({name="tatak piano",midi=note})
+    end    
+  elseif self.engine_options[params:get("mandoengine")] == "PolyPerc"  then
+    if on then 
+      engine.amp(0.5)
+      engine.hz(MusicUtil.note_num_to_freq(note))
+    end
   end
 end
 
