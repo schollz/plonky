@@ -8,7 +8,7 @@ local mandoguitar=include("mandoguitar/lib/mandoguitar")
 
 
 function init()
-  mandoguitar_grid=mandoguitar:new({grid_on=true,toggleable=true})
+  mg=mandoguitar:new({grid_on=true,toggleable=true})
 end
 
 
