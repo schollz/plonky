@@ -67,7 +67,8 @@ function Mandoguitar:new(args)
       step=0,
       step_val=0,
       pitch_mod_i=5,
-      note_on={},
+      latched={},
+      arp_val=0,
     }
   end
 
@@ -111,11 +112,11 @@ function Mandoguitar:new(args)
 end
 
 function Mandoguitar:setup_params()
-  local param_names = {"scale","root","tuning","arp","latch","division"}
+  local param_names = {"scale","root","tuning","arp","latch","division","record","play"}
   
   self.engine_options = {"MxSamples","PolyPerc"}
   self.engine_loaded = true
-  params:add_group("MANDOGUITAR",6*2+3)
+  params:add_group("MANDOGUITAR",8*2+3)
   params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options}
   params:add{type='binary',name='change engine',id='change engine',behavior='trigger',action=function(v)
     local name = self.engine_options[params:get("mandoengine")]
@@ -149,9 +150,11 @@ function Mandoguitar:setup_params()
     end,action=function(v)
       self:build_scale()
     end}
-    params:add{type="option",id=i.."arp",name="arp",options={"off","on"}}
-    params:add{type="option",id=i.."latch",name="latch",options={"off","on"},default=2}
     params:add{type="option",id=i.."division",name="division",options=division_names,default=5}
+    params:add{type="binary",id=i.."arp",name="arp",behavior="toggle"}
+    params:add{type="binary",id=i.."latch",name="latch",behavior="toggle"}
+    params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle"}
+    params:add{type="binary",id=i.."play",name="play",behavior="toggle"}
   end
   for _, param_name in ipairs(param_names) do
     params:hide("2"..param_name)
@@ -203,13 +206,17 @@ end
 function Mandoguitar:emit_note(division)
   local update=false
   for i=1,self.num_voices do
-    if self.voices[i].is_playing and self.voices[i].division==division then
+    if params:get(i.."play")==1 and self.voices[i].division==division then
       self.voices[i].step=self.voices[i].step+1
       if self.voices[i].step>#self.voices[i].steps then
         self.voices[i].step=1
       end
       
       update=true
+    end
+    if params:get(i.."arp")==2 and self.voices[i].division==division then
+      local notes = self:notes_playing(i)
+
     end
   end
   if update then
@@ -282,6 +289,24 @@ function Mandoguitar:key_press(row,col,on)
     end
   end
 
+  if on and params:get(voice.."latch")==2 then 
+    -- reset if all buttons where off
+    local num_on=0
+    for k,_ in pairs(self.pressed_buttons) do
+      _,col0=k:match("(%d+),(%d+)")
+      col0 = tonumber(col0)
+      if col0 <= 8 and voice == 1 then 
+        num_on = num_on + 1
+      elseif col0 >= 9 and voice == 2 then 
+        num_on = num_on + 1
+      end
+    end
+    if num_on<=1 then 
+       self.voices[voice].latched = {}
+    end
+    self.voices[voice].latched[row..","..col] = self:current_time()
+  end
+
   self:press_note(row,col,on)
 end
 
@@ -292,34 +317,12 @@ function Mandoguitar:press_note(row,col,on)
     voice = 2
   end
   local note = self.voices[voice].scale[(self.voices[voice].string-1)*(col-1)+(9-row)]
-  if on then
-    if params:get(voice.."latch")==2 then 
-      -- reset if all buttons are off
-      local num_on=0
-      for k,_ in pairs(self.pressed_buttons) do
-        _,col0=k:match("(%d+),(%d+)")
-        col0 = tonumber(col0)
-        if col0 <= 8 and voice == 1 then 
-          num_on = num_on + 1
-        elseif col0 >= 9 and voice == 2 then 
-          num_on = num_on + 1
-        end
-      end
-      if num_on<=1 then 
-         self.voices[voice].note_on = {}
-      end
-    end
-    self.voices[voice].note_on[note] = self:current_time()
-    tab.print(self:notes_playing(voice))
-  elseif params:get(voice.."latch")==1 then
-    self.voices[voice].note_on[note] = nil
-  end
   self:engine_play(note,on)
 end
 
 function Mandoguitar:notes_playing(voice)
   sortFunction = function(a, b) return a < b end
-  local tbl = self.voices[voice].note_on
+  local tbl = self.voices[voice].latched
   local keys = {}
   for key in pairs(tbl) do
     table.insert(keys, key)
