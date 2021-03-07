@@ -7,8 +7,7 @@
 https://vimeo.com/514823601
 
 
-plonky is a keyboard and sequencer. i made it to be able to play [mx.samples](https://llllllll.co/t/mx-samples/41400) directly from the grid. the grid layout (and name) is inspired by the [plinky synth](https://www.plinkysynth.com/), i.e. it is a 8x8 layout with notes spaced out between columns by a specified interval. by default each column is a fifth apart and it is a C-major scale (all customizable in menu).
-
+plonky is a keyboard and sequencer. i made it to be able to play [mx.samples](https://llllllll.co/t/mx-samples/41400) directly from the grid. the grid layout (and name) is inspired by the [plinky synth](https://www.plinkysynth.com/), i.e. it is a 8x8 layout with notes spaced out between columns by a specified interval (default is C-major scale spaced out by fifths).
 
 
 ### Requirements
@@ -18,7 +17,7 @@ plonky is a keyboard and sequencer. i made it to be able to play [mx.samples](ht
 
 ### Documentation
 
-use the grid to play an engine. by default the engine is "PolyPerc", but if you install [mx.samples](https://llllllll.co/t/mx-samples/41400) you can also play that. engine options are found in the parameters menu `PLONKY`.
+use the grid to play an engine. by default the engine is "PolyPerc", but if you install [mx.samples](https://llllllll.co/t/mx-samples/41400) you can also play that by switching `PLONKY > engine` via parameters.
 
 each 8x8 section of the grid is a voice (1 voice for 64-grid, 2 voices for 128-grid). you can play notes in that voice by pressing pads. the notes correspond to a C-major scale, where each column is a fifth apart (all adjustable in menu).
 
