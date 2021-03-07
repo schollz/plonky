@@ -1,7 +1,7 @@
 -- plonky v1.0.0
 -- keyboard + sequencer
 --
--- llllllll.co/t/oooooo
+-- llllllll.co/t/plonky
 --
 --
 --

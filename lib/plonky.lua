@@ -187,7 +187,7 @@ function Plonky:setup_params()
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("MANDOGUITAR",15*2+2)
+  params:add_group("PLONKY",15*2+2)
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
     self.updateengine=4
   end}
