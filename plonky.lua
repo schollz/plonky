@@ -1,4 +1,4 @@
--- plonk v1.0.0
+-- plonky v1.0.0
 -- keyboard + sequencer
 --
 -- llllllll.co/t/oooooo
@@ -13,12 +13,12 @@
 
 
 
-local plonk=include("plonk/lib/plonk")
+local plonky=include("plonky/lib/plonky")
 local shift=false
 local arplatch=0
 
 function init()
-  mg=plonk:new({grid_on=true,toggleable=true})
+  mg=plonky:new({grid_on=true,toggleable=true})
   clock.run(function()
     while true do
       clock.sleep(1/10) -- refresh

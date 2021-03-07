@@ -1,4 +1,4 @@
-local json=include("plonk/lib/json") -- todo load faster library
+local json=include("plonky/lib/json") -- todo load faster library
 local lattice=require("lattice")
 local MusicUtil=require "musicutil"
 
@@ -7,12 +7,12 @@ if util.file_exists(_path.code.."mx.samples") then
   mxsamples=include("mx.samples/lib/mx.samples")
 end
 
-local Plonk={}
+local Plonky={}
 local divisions={1,2,4,6,8,12,16,24,32}
 local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
 
-function Plonk:new(args)
-  local m=setmetatable({},{__index=Plonk})
+function Plonky:new(args)
+  local m=setmetatable({},{__index=Plonky})
   local args=args==nil and {} or args
   m.debug=true -- args.debug TODO remove this
   m.grid_on=args.grid_on==nil and true or args.grid_on
@@ -138,7 +138,7 @@ function Plonk:new(args)
   return m
 end
 
-function Plonk:update_engine()
+function Plonky:update_engine()
   local name=self.engine_options[params:get("mandoengine")]
   print("loading "..name)
   self.engine_loaded=false
@@ -146,7 +146,7 @@ function Plonk:update_engine()
     self.engine_loaded=true
     print("loaded "..name)
     -- write this engine as last used for next default on startup
-    f=io.open(_path.data.."plonk/engine","w")
+    f=io.open(_path.data.."plonky/engine","w")
     f:write(params:get("mandoengine"))
     f:close()
   end)
@@ -154,7 +154,7 @@ function Plonk:update_engine()
   self:reload_params(params:get("voice"))
 end
 
-function Plonk:reload_params(v)
+function Plonky:reload_params(v)
   for _,param_name in ipairs(self.param_names) do
     params:show(v..param_name)
     params:hide((3-v)..param_name)
@@ -175,7 +175,7 @@ function Plonk:reload_params(v)
   end
 end
 
-function Plonk:setup_params()
+function Plonky:setup_params()
   self.engine_loaded=false
   self.engine_options={"PolyPerc"}
   if mxsamples~=nil then
@@ -250,8 +250,8 @@ function Plonk:setup_params()
     params:hide(i.."play_steps")
   end
   -- read in the last used engine as the default
-  if util.file_exists(_path.data.."plonk/engine") then
-    local f=io.open(_path.data.."plonk/engine","rb")
+  if util.file_exists(_path.data.."plonky/engine") then
+    local f=io.open(_path.data.."plonky/engine","rb")
     local content=f:read("*all")
     f:close()
     print(content)
@@ -262,7 +262,7 @@ function Plonk:setup_params()
   self:update_engine()
 end
 
-function Plonk:build_scale()
+function Plonky:build_scale()
   for i=1,2 do
     self.voices[i].scale=MusicUtil.generate_scale_of_length(params:get(i.."root"),self.scale_names[params:get(i.."scale")],168)
   end
@@ -270,11 +270,11 @@ function Plonk:build_scale()
   print("scale start: "..self.voices[2].scale[1])
 end
 
-function Plonk:toggle_grid64_side()
+function Plonky:toggle_grid64_side()
   self.grid64default=not self.grid64default
 end
 
-function Plonk:toggle_grid(on)
+function Plonky:toggle_grid(on)
   if on==nil then
     self.grid_on=not self.grid_on
   else
@@ -283,7 +283,7 @@ function Plonk:toggle_grid(on)
   if self.grid_on then
     self.g=grid.connect()
     self.g.key=function(x,y,z)
-      print("plonk grid: ",x,y,z)
+      print("plonky grid: ",x,y,z)
       if self.grid_on then
         self:grid_key(x,y,z)
       end
@@ -295,17 +295,17 @@ function Plonk:toggle_grid(on)
   end
 end
 
-function Plonk:set_toggle_callback(fn)
+function Plonky:set_toggle_callback(fn)
   self.toggle_callback=fn
 end
 
-function Plonk:grid_key(x,y,z)
+function Plonky:grid_key(x,y,z)
   self:key_press(y,x,z==1)
   self:grid_redraw()
 end
 
 
-function Plonk:emit_note(division,step)
+function Plonky:emit_note(division,step)
   local update=false
   for i=1,self.num_voices do
     if params:get(i.."play")==1 and divisions[params:get(i.."division")]==division then
@@ -384,7 +384,7 @@ function Plonk:emit_note(division,step)
 end
 
 
-function Plonk:get_visual()
+function Plonky:get_visual()
   --- update the blinky thing
   self.blink_count=self.blink_count+1
   if self.blink_count>1000 then
@@ -461,7 +461,7 @@ function Plonk:get_visual()
   return self.visual
 end
 
-function Plonk:record_add_rest_or_legato(voice)
+function Plonky:record_add_rest_or_legato(voice)
   if params:get(voice.."record")==0 then do return end end
 local wtd="." -- rest
   if self.debug then
@@ -480,7 +480,7 @@ local wtd="." -- rest
   self.voices[voice].record_steps[self.voices[voice].record_step]={wtd}
 end
 
-function Plonk:record_update_step(voice)
+function Plonky:record_update_step(voice)
   if self.debug then
     print("record_update_step",json.encode(self.voices[voice].record_steps))
   end
@@ -505,7 +505,7 @@ function Plonk:record_update_step(voice)
   end
 end
 
-function Plonk:key_press(row,col,on)
+function Plonky:key_press(row,col,on)
   if self.grid64 and not self.grid64default then
     col=col+8
   end
@@ -559,7 +559,7 @@ function Plonk:key_press(row,col,on)
 end
 
 
-function Plonk:press_note(row,col,on)
+function Plonky:press_note(row,col,on)
   if on then
     self.pressed_notes[row..","..col]=true
   else
@@ -596,7 +596,7 @@ function Plonk:press_note(row,col,on)
   end
 end
 
-function Plonk:get_cluster(voice)
+function Plonky:get_cluster(voice)
   s=""
   for _,rc in ipairs(self.voices[voice].cluster) do
     local row,col=rc:match("(%d+),(%d+)")
@@ -612,14 +612,14 @@ function Plonk:get_cluster(voice)
   return s
 end
 
-function Plonk:get_note_from_pos(voice,row,col)
+function Plonky:get_note_from_pos(voice,row,col)
   if voice==2 then
     col=col-8
   end
   return self.voices[voice].scale[(params:get(voice.."tuning")-1)*(col-1)+(9-row)]
 end
 
-function Plonk:get_keys_sorted_by_value(tbl)
+function Plonky:get_keys_sorted_by_value(tbl)
   sortFunction=function(a,b) return a<b end
 
   local keys={}
@@ -636,7 +636,7 @@ function Plonk:get_keys_sorted_by_value(tbl)
   return keys,keys_length
 end
 
-function Plonk:get_keys_sorted_by_key(tbl)
+function Plonky:get_keys_sorted_by_key(tbl)
   sortFunction=function(a,b) return a<b end
 
   local keys={}
@@ -653,11 +653,11 @@ function Plonk:get_keys_sorted_by_key(tbl)
   return keys,keys_length
 end
 
-function Plonk:current_time()
+function Plonky:current_time()
   return clock.get_beat_sec()*clock.get_beats()
 end
 
-function Plonk:grid_redraw()
+function Plonky:grid_redraw()
   self.g:all(0)
   local gd=self:get_visual()
   local s=1
@@ -681,7 +681,7 @@ function Plonk:grid_redraw()
   self.g:refresh()
 end
 
-function Plonk:calculate_lfo(period_in_beats,offset)
+function Plonky:calculate_lfo(period_in_beats,offset)
   if period_in_beats==0 then
     return 1
   else
@@ -689,4 +689,4 @@ function Plonk:calculate_lfo(period_in_beats,offset)
   end
 end
 
-return Plonk
+return Plonky

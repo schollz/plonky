@@ -1,4 +1,4 @@
-# plonk
+# plonky
 
 quantized granulation
 
@@ -23,6 +23,6 @@ first install [mx.samples](https://llllllll.co/t/mx-samples/41400) and load some
 from maiden:
 
 ```
-;install https://github.com/schollz/plonk
+;install https://github.com/schollz/plonky
 ```
 
