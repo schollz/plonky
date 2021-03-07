@@ -152,7 +152,7 @@ function Plonk:setup_params()
     end
   end
 
-  params:add_group("MANDOGUITAR",14*2+3)
+  params:add_group("MANDOGUITAR",15*2+3)
   params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options}
   params:add{type='binary',name='change engine',id='change engine',behavior='trigger',action=function(v)
     local name=self.engine_options[params:get("mandoengine")]
@@ -197,8 +197,10 @@ function Plonk:setup_params()
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
     params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=0,action=function(v)
       if v==1 then
-        self.voices[i].record_step=1
+        self.voices[i].record_step=0
+        self.voices[i].record_step_adj=0
         self.voices[i].record_steps={}
+        self.voices[i].cluster={}
       elseif v==0 and self.voices[i].record_step>0 then
         if self.debug then
           print(json.encode(self.voices[i].record_steps))
@@ -431,14 +433,12 @@ local wtd="." -- rest
   if next(self.voices[voice].cluster)~=nil then
     wtd="-"
     self.voices[voice].record_steps[self.voices[voice].record_step]=self.voices[voice].cluster
-    self:record_update_step(voice)
     self.voices[voice].cluster={}
-  elseif next(self.voices[voice].record_steps)~=nil and self.voices[voice].record_steps[#self.voices[voice].record_steps][1]=="-" then
-    wtd="-"
+  elseif next(self.voices[voice].record_steps)~=nil and self.voices[voice].record_steps[#self.voices[voice].record_steps][1]=="-" and next(self.voices[voice].pressed)~=nil and next(self.voices[voice].cluster)==nil then
+    wtd="-"    
   end
-  table.insert(self.voices[voice].record_steps,{wtd})
-  self.voices[voice].record_steps[self.voices[voice].record_step]={wtd}
   self:record_update_step(voice)
+  self.voices[voice].record_steps[self.voices[voice].record_step]={wtd}
 end
 
 function Plonk:record_update_step(voice)
@@ -486,6 +486,9 @@ function Plonk:key_press(row,col,on)
   -- add to note cluster
   if on then
     self.voices[voice].pressed[rc]=ct
+    if params:get(voice.."record")==1 and next(self.voices[voice].cluster)==nil then
+      self:record_update_step(voice)
+    end
     table.insert(self.voices[voice].cluster,rc)
   else
     self.voices[voice].pressed[rc]=nil
@@ -498,7 +501,6 @@ function Plonk:key_press(row,col,on)
       if params:get(voice.."record")==1 then
         if next(self.voices[voice].cluster)~=nil then
           self.voices[voice].record_steps[self.voices[voice].record_step]=self.voices[voice].cluster
-          self:record_update_step(voice)
         end
         if self.debug then
           print(json.encode(self.voices[voice].record_steps))
