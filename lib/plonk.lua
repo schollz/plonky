@@ -397,10 +397,14 @@ function Plonk:get_visual()
 
   -- show latched
   for i=1,self.num_voices do
+    local intensity=2
     if params:get(i.."latch")==1 then
-      for _,k in ipairs(self.voices[i].latched) do
-        local row,col=k:match("(%d+),(%d+)")
-        self.visual[tonumber(row)][tonumber(col)]=10
+      intensity=10
+    end
+    for _,k in ipairs(self.voices[i].latched) do
+      local row,col=k:match("(%d+),(%d+)")
+      if self.visual[tonumber(row)][tonumber(col)]==0 then
+        self.visual[tonumber(row)][tonumber(col)]=intensity
       end
     end
   end
