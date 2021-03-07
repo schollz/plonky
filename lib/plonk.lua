@@ -137,6 +137,7 @@ function Plonk:update_engine()
   engine.load(name,function()
     self.engine_loaded=true
     print("loaded "..name)
+    -- TODO: write this engine as last used for next default on startup
   end)
   engine.name=name
   self:reload_params(params:get("voice"))
@@ -236,6 +237,7 @@ function Plonk:setup_params()
     params:hide(i.."play_steps")
   end
   self:reload_params(1)
+  -- TODO: read in the last used engine as the default
   self:update_engine()
 end
 
