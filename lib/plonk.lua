@@ -287,9 +287,9 @@ function Plonk:emit_note(division,step)
       local rcs=self.voices[i].play_steps[ind]
       local rcs_next=self.voices[i].play_steps[ind2]
       if rcs~=nil and rcs_next~=nil then
-        -- print("----------")
-        -- print(ind,"rcs",json.encode(rcs))
-        -- print(ind2,"rcs_next",json.encode(rcs_next))
+        print("----------")
+        print(ind,"rcs",json.encode(rcs))
+        print(ind2,"rcs_next",json.encode(rcs_next))
         if rcs[1]~="-" and rcs[1]~="." then
           self.voices[i].play_last={}
           for _,key in ipairs(rcs) do
@@ -450,12 +450,15 @@ function Plonk:record_update_step(voice)
   -- check adjustment
   if self.voices[voice].record_step_adj==0 then do return end end
 -- erase steps
-  local last=self.voices[voice].record_steps[#self.voices[voice].record_steps]
-  for i=self.voices[voice].record_step_adj-1,0 do
+  -- local last=self.voices[voice].record_steps[#self.voices[voice].record_steps]
+  for i=self.voices[voice].record_step_adj,0 do
     self.voices[voice].record_steps[self.voices[voice].record_step+i]=nil
   end
+  if self.voices[voice].record_steps==nil then 
+    self.voices[voice].record_steps = {}
+  end
   self.voices[voice].record_step=self.voices[voice].record_step+self.voices[voice].record_step_adj-1
-  self.voices[voice].record_steps[self.voices[voice].record_step]=last
+  -- self.voices[voice].record_steps[self.voices[voice].record_step]=last
   self.voices[voice].record_step=self.voices[voice].record_step+1
   self.voices[voice].record_step_adj=0
   if self.debug then

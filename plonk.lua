@@ -36,7 +36,7 @@ function enc(k,d)
       params:set((k-1).."latch",1)
     end
   elseif k>1 and params:get((k-1).."record")==1 then
-    mg.voices[k-1].record_step_adj=util.clamp(mg.voices[k-1].record_step_adj+sign(d),-1*mg.voices[k-1].record_step+1,0)
+    mg.voices[k-1].record_step_adj=util.clamp(mg.voices[k-1].record_step_adj+sign(d),-1*mg.voices[k-1].record_step,0)
     print("mg.voices[k-1].record_step_adj",mg.voices[k-1].record_step_adj)
   end
 end
@@ -94,7 +94,7 @@ function redraw()
     screen.move(28+72*(i-1),46)
     screen.font_size(48)
     if params:get(i.."record")==1 then
-      screen.text_center(mg.voices[i].record_step+mg.voices[i].record_step_adj)
+      screen.text_center(mg.voices[i].record_step+mg.voices[i].record_step_adj+1)
     else
       screen.text_center(mg.voices[i].play_step)
     end
