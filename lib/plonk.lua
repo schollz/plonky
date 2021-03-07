@@ -174,10 +174,9 @@ function Plonk:setup_params()
 
 
   params:add_group("MANDOGUITAR",15*2+2)
-  params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options,action=function()
+  params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
     self.updateengine=10
   end}
-  params:add_separator("voices")
   params:add{type="number",id="voice",name="voice",min=1,max=2,default=1,action=function(v)
     self:reload_params(v)
     _menu.rebuild_params()
