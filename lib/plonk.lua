@@ -127,19 +127,19 @@ function Plonk:setup_params()
   local param_names={"scale","root","tuning","arp","latch","division","record","play"}
   local engine_params={}
   engine_params["MxSamples"]={"mx_instrument"}
-  local reload_params = function(v)
+  local reload_params=function(v)
     for _,param_name in ipairs(param_names) do
       params:show(v..param_name)
       params:hide((3-v)..param_name)
     end
     for eng,param_list in pairs(engine_params) do
-      if self.engine_options[params:get("mandoengine")]==eng then 
-        for _, param_name in ipairs(param_list) do
+      if self.engine_options[params:get("mandoengine")]==eng then
+        for _,param_name in ipairs(param_list) do
           params:show(v..param_name)
           params:hide((3-v)..param_name)
         end
       else
-        for _, param_name in ipairs(param_list) do
+        for _,param_name in ipairs(param_list) do
           for j=1,2 do
             params:hide(j..param_name)
           end

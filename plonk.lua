@@ -5,7 +5,7 @@
 
 local plonk=include("plonk/lib/plonk")
 local shift=false
-local arplatch = 0
+local arplatch=0
 
 function init()
   mg=plonk:new({grid_on=true,toggleable=true})
@@ -21,14 +21,14 @@ end
 
 
 function enc(k,d)
-  if k>1 and params:get((k-1).."record")==0 then 
+  if k>1 and params:get((k-1).."record")==0 then
     -- toggle arp/latch
-    d = sign(d)
-    arplatch = util.clamp(arplatch+d,0,2)
-    if arplatch==0 then 
+    d=sign(d)
+    arplatch=util.clamp(arplatch+d,0,2)
+    if arplatch==0 then
       params:set((k-1).."arp",0)
       params:set((k-1).."latch",0)
-    elseif arplatch==1 then 
+    elseif arplatch==1 then
       params:set((k-1).."arp",1)
       params:set((k-1).."latch",0)
     else
@@ -39,9 +39,9 @@ function enc(k,d)
 end
 
 function key(k,z)
-  if k==1 then 
+  if k==1 then
     shift=z==1
-  elseif shift and z==1 then 
+  elseif shift and z==1 then
     params:delta((k-1).."record")
     params:set((k-1).."play",0)
   elseif params:get((k-1).."record")==1 and z==1 then
@@ -63,7 +63,7 @@ function redraw()
   screen.line(65,64)
   screen.stroke()
   screen.level(15)
- for i=1,2 do
+  for i=1,2 do
     screen.font_size(8)
 
     if params:get(i.."record")==1 then
@@ -80,9 +80,9 @@ function redraw()
       screen.text_center("recording")
     end
     screen.move(30+72*(i-1),63)
-    if params:get(i.."arp")==1 and params:get(i.."latch")==1 then 
+    if params:get(i.."arp")==1 and params:get(i.."latch")==1 then
       screen.text_center("arp+latch")
-    elseif params:get(i.."arp")==1 then 
+    elseif params:get(i.."arp")==1 then
       screen.text_center("arp")
     end
     screen.move(28+72*(i-1),46)
@@ -109,3 +109,5 @@ function sign(x)
     return 0
   end
 end
+
+ 
