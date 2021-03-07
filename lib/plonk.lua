@@ -25,7 +25,7 @@ function Plonk:new(args)
     self.mx=mxsamples:new()
     self.instrument_list=self.mx:list_instruments()
   else
-    self.mx=nil 
+    self.mx=nil
     self.instrument_list={}
   end
 
@@ -145,7 +145,10 @@ function Plonk:update_engine()
   engine.load(name,function()
     self.engine_loaded=true
     print("loaded "..name)
-    -- TODO: write this engine as last used for next default on startup
+    -- write this engine as last used for next default on startup
+    f=io.open(_path.data.."plonk/engine","w")
+    f:write(params:get("mandoengine"))
+    f:close()
   end)
   engine.name=name
   self:reload_params(params:get("voice"))
@@ -175,9 +178,9 @@ end
 function Plonk:setup_params()
   self.engine_loaded=false
   self.engine_options={"PolyPerc"}
-if mxsamples~=nil then
-  table.insert(self.engine_options,"MxSamples")
-end
+  if mxsamples~=nil then
+    table.insert(self.engine_options,"MxSamples")
+  end
   self.param_names={"scale","root","tuning","arp","latch","division","record","play"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity"}
@@ -186,7 +189,7 @@ end
 
   params:add_group("MANDOGUITAR",15*2+2)
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
-    self.updateengine=10
+    self.updateengine=4
   end}
   params:add{type="number",id="voice",name="voice",min=1,max=2,default=1,action=function(v)
     self:reload_params(v)
@@ -246,8 +249,16 @@ end
     params:add_text(i.."play_steps",i.."play_steps","")
     params:hide(i.."play_steps")
   end
+  -- read in the last used engine as the default
+  if util.file_exists(_path.data.."plonk/engine") then
+    local f=io.open(_path.data.."plonk/engine","rb")
+    local content=f:read("*all")
+    f:close()
+    print(content)
+    params:set("mandoengine",tonumber(content))
+  end
+
   self:reload_params(1)
-  -- TODO: read in the last used engine as the default
   self:update_engine()
 end
 

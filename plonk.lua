@@ -1,6 +1,16 @@
--- plonk v0.0.0
--- 8 strings with 5th tuning
+-- plonk v1.0.0
+-- keyboard + sequencer
 --
+-- llllllll.co/t/oooooo
+--
+--
+--
+--    ▼ instructions below ▼
+--
+-- k1+(k2 or k3) records pattern
+-- k2 or k3 plays pattern
+-- (e2 or e3) changes latch/arp
+
 
 
 local plonk=include("plonk/lib/plonk")
