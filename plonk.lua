@@ -1,14 +1,14 @@
--- mandoguitar v0.0.0
+-- plonk v0.0.0
 -- 8 strings with 5th tuning
 --
 
 
-local mandoguitar=include("mandoguitar/lib/mandoguitar")
+local plonk=include("plonk/lib/plonk")
 
 
 
 function init()
-  mg=mandoguitar:new({grid_on=true,toggleable=true})
+  mg=plonk:new({grid_on=true,toggleable=true})
   clock.run(function()
     while true do
       clock.sleep(1/10) -- refresh

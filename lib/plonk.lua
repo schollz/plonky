@@ -1,4 +1,4 @@
--- local json=include("mandoguitar/lib/json")
+-- local json=include("plonk/lib/json")
 local lattice=require("lattice")
 local MusicUtil = require "musicutil"
 local mxsamples=include("mx.samples/lib/mx.samples")
@@ -6,12 +6,12 @@ local mxsamples=include("mx.samples/lib/mx.samples")
 
 engine.name="MxSamples" -- default engine
 
-local Mandoguitar={}
+local Plonk={}
 local divisions={1,2,4,6,8,12,16,24,32}
 local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
 
-function Mandoguitar:new(args)
-  local m=setmetatable({},{__index=Mandoguitar})
+function Plonk:new(args)
+  local m=setmetatable({},{__index=Plonk})
   local args=args==nil and {} or args
   m.debug = true -- args.debug TODO remove this
   m.grid_on=args.grid_on==nil and true or args.grid_on
@@ -118,7 +118,7 @@ function Mandoguitar:new(args)
   return m
 end
 
-function Mandoguitar:setup_params()
+function Plonk:setup_params()
   local param_names = {"scale","root","tuning","arp","latch","division","record","play"}
   
   self.engine_options = {"MxSamples","PolyPerc"}
@@ -177,7 +177,7 @@ function Mandoguitar:setup_params()
   params:hide("2mx_instrument")
 end
 
-function Mandoguitar:build_scale()
+function Plonk:build_scale()
   for i=1,2 do 
     self.voices[i].scale = MusicUtil.generate_scale_of_length(params:get(i.."root"), self.scale_names[params:get(i.."scale")], 168)
   end
@@ -185,11 +185,11 @@ function Mandoguitar:build_scale()
   print("scale start: "..self.voices[2].scale[1])
 end
 
-function Mandoguitar:toggle_grid64_side()
+function Plonk:toggle_grid64_side()
   self.grid64default=not self.grid64default
 end
 
-function Mandoguitar:toggle_grid(on)
+function Plonk:toggle_grid(on)
   if on==nil then
     self.grid_on=not self.grid_on
   else
@@ -198,7 +198,7 @@ function Mandoguitar:toggle_grid(on)
   if self.grid_on then
     self.g=grid.connect()
     self.g.key=function(x,y,z)
-      print("mandoguitar grid: ",x,y,z)
+      print("plonk grid: ",x,y,z)
       if self.grid_on then
         self:grid_key(x,y,z)
       end
@@ -210,17 +210,17 @@ function Mandoguitar:toggle_grid(on)
   end
 end
 
-function Mandoguitar:set_toggle_callback(fn)
+function Plonk:set_toggle_callback(fn)
   self.toggle_callback=fn
 end
 
-function Mandoguitar:grid_key(x,y,z)
+function Plonk:grid_key(x,y,z)
   self:key_press(y,x,z==1)
   self:grid_redraw()
 end
 
 
-function Mandoguitar:emit_note(division,step)
+function Plonk:emit_note(division,step)
   local update=false
   for i=1,self.num_voices do
     if params:get(i.."play")==1 and divisions[params:get(i.."division")]==division then
@@ -270,7 +270,7 @@ function Mandoguitar:emit_note(division,step)
 end
 
 
-function Mandoguitar:get_visual()
+function Plonk:get_visual()
   --- update the blinky thing
   self.blink_count=self.blink_count+1
   if self.blink_count>1000 then
@@ -339,7 +339,7 @@ function Mandoguitar:get_visual()
   return self.visual
 end
 
-function Mandoguitar:key_press(row,col,on)
+function Plonk:key_press(row,col,on)
   if self.grid64 and not self.grid64default then
     col=col+8
   end
@@ -383,7 +383,7 @@ function Mandoguitar:key_press(row,col,on)
   self:press_note(row,col,on)
 end
 
-function Mandoguitar:press_note(row,col,on)
+function Plonk:press_note(row,col,on)
   -- determine voice
   local voice = 1
   if col > 8 then 
@@ -413,14 +413,14 @@ function Mandoguitar:press_note(row,col,on)
   end
 end
 
-function Mandoguitar:get_note_from_pos(voice,row,col)
+function Plonk:get_note_from_pos(voice,row,col)
   if voice == 2 then 
     col = col - 8
   end
   return self.voices[voice].scale[(params:get(voice.."tuning")-1)*(col-1)+(9-row)]
 end
 
-function Mandoguitar:get_keys_sorted_by_value(tbl)
+function Plonk:get_keys_sorted_by_value(tbl)
   sortFunction = function(a, b) return a < b end
 
   local keys = {}
@@ -437,11 +437,11 @@ function Mandoguitar:get_keys_sorted_by_value(tbl)
   return keys, keys_length
 end
 
-function Mandoguitar:current_time()
+function Plonk:current_time()
   return clock.get_beat_sec()*clock.get_beats()
 end
 
-function Mandoguitar:grid_redraw()
+function Plonk:grid_redraw()
   self.g:all(0)
   local gd=self:get_visual()
   local s=1
@@ -465,7 +465,7 @@ function Mandoguitar:grid_redraw()
   self.g:refresh()
 end
 
-function Mandoguitar:calculate_lfo(period_in_beats,offset)
+function Plonk:calculate_lfo(period_in_beats,offset)
   if period_in_beats==0 then
     return 1
   else
@@ -473,4 +473,4 @@ function Mandoguitar:calculate_lfo(period_in_beats,offset)
   end
 end
 
-return Mandoguitar
+return Plonk
