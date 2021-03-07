@@ -4,7 +4,7 @@ quantized granulation
 
 https://vimeo.com/514823601
 
-> plonk: to play a musical instrument, usually not very well but often loudly
+> plonk (/plɒŋk/) - to play a musical instrument, usually not very well but often loudly
 > - Cambride Dictionary
 
 first install [mx.samples](https://llllllll.co/t/mx-samples/41400) and load some samples.
