@@ -60,7 +60,11 @@ function redraw()
     end
     screen.move(28+68*(i-1),46)
     screen.font_size(48)
-    screen.text_center(mg.voices[i].record_step)
+    if params:get(i.."record")==1 then
+      screen.text_center(mg.voices[i].record_step)
+    else
+      screen.text_center(mg.voices[i].play_step)
+    end
   end
   screen.update()
 end
