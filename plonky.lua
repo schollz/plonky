@@ -19,13 +19,14 @@ local arplatch=0
 
 function init()
   mg=plonky:new({grid_on=true,toggleable=true})
-  clock.run(function()
-    while true do
-      clock.sleep(1/10) -- refresh
-      redraw()
-    end
-  end) -- start the grid redraw clock
 
+  drawing=metro.init()
+  drawing.time=0.1
+  drawing.count=-1
+  drawing.event=function()
+    redraw()
+  end
+  drawing:start()
 end
 
 

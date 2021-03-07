@@ -14,7 +14,7 @@ local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
 function Plonky:new(args)
   local m=setmetatable({},{__index=Plonky})
   local args=args==nil and {} or args
-  m.debug=true -- args.debug TODO remove this
+  m.debug=false -- args.debug TODO remove this
   m.grid_on=args.grid_on==nil and true or args.grid_on
   m.toggleable=args.toggleable==nil and false or args.toggleable
 
@@ -183,11 +183,11 @@ function Plonky:setup_params()
   end
   self.param_names={"scale","root","tuning","arp","latch","division","record","play"}
   self.engine_params={}
-  self.engine_params["MxSamples"]={"mx_instrument","mx_velocity"}
+  self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",15*2+2)
+  params:add_group("PLONKY",18*2+2)
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
     self.updateengine=4
   end}
@@ -199,6 +199,9 @@ function Plonky:setup_params()
     -- MxSamples parameters
     params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=10}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
+    params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,10,'lin',0,1.0,'amp')}
+    params:add{type="control",id=i.."mx_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
+    params:add {type='control',id=i.."mx_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
     -- PolyPerc parameters
     params:add{type="control",id=i.."pp_amp",name="amp",controlspec=controlspec.new(0,1,'lin',0,0.5,'')}
     params:add{type="control",id=i.."pp_pw",name="pw",controlspec=controlspec.new(0,100,'lin',0,50,'%')}
@@ -236,7 +239,7 @@ function Plonky:setup_params()
     params:add{type="binary",id=i.."play",name="play",behavior="toggle",action=function(v)
       if v==1 then
         if params:get(i.."play_steps")~="[]" and params:get(i.."play_steps")~="" then
-          print("playing "..i)
+          if self.debug then print("playing "..i) end
           self.voices[i].play_steps=json.decode(params:get(i.."play_steps"))
           self.voices[i].play_step=0
         else
@@ -322,9 +325,6 @@ function Plonky:emit_note(division,step)
       local rcs=self.voices[i].play_steps[ind]
       local rcs_next=self.voices[i].play_steps[ind2]
       if rcs~=nil and rcs_next~=nil then
-        print("----------")
-        print(ind,"rcs",json.encode(rcs))
-        print(ind2,"rcs_next",json.encode(rcs_next))
         if rcs[1]~="-" and rcs[1]~="." then
           self.voices[i].play_last={}
           for _,key in ipairs(rcs) do
@@ -581,7 +581,14 @@ function Plonky:press_note(row,col,on)
   end
   if engine.name=="MxSamples" then
     if on then
-      self.mx:on({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note,velocity=params:get(voice.."mx_velocity")})
+      self.mx:on({
+        name=self.instrument_list[params:get(voice.."mx_instrument")],
+        midi=note,
+        velocity=params:get(voice.."mx_velocity"),
+        amp=params:get(voice.."mx_amp"),
+        release=params:get(voice.."mx_release"),
+        pan=params:get(voice.."mx_pan"),
+      })
     else
       self.mx:off({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note})
     end
