@@ -74,6 +74,7 @@ function Mandoguitar:new(args)
       cluster={},
       pressed={},
       latched={},
+      arp_last="",
       arp_step=1,
     }
   end
@@ -241,17 +242,24 @@ function Mandoguitar:emit_note(division,step)
       end
       if keys_len > 0 then 
         local key = keys[1]
+        local key_next = keys[2]
         if keys_len > 1 then 
           key = keys[(self.voices[i].arp_step)%keys_len+1]
+          key_next = keys[(self.voices[i].arp_step+1)%keys_len+1]
         end
-        local row,col=key:match("(%d+),(%d+)")
-        row = tonumber(row)
-        col = tonumber(col)
-        self:press_note(row,col,true)
-        clock.run(function()
-          clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
-          self:press_note(row,col,false)
-        end)
+        if key~="-" then 
+          local row,col=key:match("(%d+),(%d+)")
+          row = tonumber(row)
+          col = tonumber(col)
+          self:press_note(row,col,true)
+          self.voices[i].arp_last={row,col}
+        end
+        if key_next ~="-" and self.voices[i].arp_last~=nil then
+          clock.run(function()
+            clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
+            self:press_note(self.voices[i].arp_last[1],self.voices[i].arp_last[2],false)
+          end)
+        end
         self.voices[i].arp_step = self.voices[i].arp_step+1
       end
     end
