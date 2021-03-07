@@ -41,8 +41,15 @@ end
 
 function redraw()
   screen.clear()
+  screen.level(1)
+  screen.move(64,1)
+  screen.line(64,64)
+  screen.stroke()
+  screen.move(65,1)
+  screen.line(65,64)
+  screen.stroke()
   screen.level(15)
-  for i=1,2 do
+ for i=1,2 do
     screen.font_size(8)
 
     if params:get(i.."record")==1 then
@@ -52,13 +59,13 @@ function redraw()
       screen.move(1+64*(i-1),10)
       screen.text(params:get(i.."current_note"))
     end
-    screen.move(12+68*(i-1),54)
+    screen.move(30+72*(i-1),54)
     if params:get(i.."play")==1 then
-      screen.text("playing")
+      screen.text_center("playing")
     elseif params:get(i.."record")==1 then
-      screen.text("recording")
+      screen.text_center("recording")
     end
-    screen.move(28+68*(i-1),46)
+    screen.move(28+72*(i-1),46)
     screen.font_size(48)
     if params:get(i.."record")==1 then
       screen.text_center(mg.voices[i].record_step)

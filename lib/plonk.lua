@@ -75,9 +75,9 @@ function Plonk:new(args)
       arp_last="",
       arp_step=1,
       record_steps={},
-      record_step=0,
+      record_step=1,
       play_steps={},
-      play_step=0,
+      play_step=1,
     }
   end
 
@@ -121,10 +121,33 @@ function Plonk:new(args)
 end
 
 function Plonk:setup_params()
-  local param_names={"scale","root","tuning","arp","latch","division","record","play"}
-
   self.engine_options={"MxSamples","PolyPerc"}
   self.engine_loaded=true
+
+  local param_names={"scale","root","tuning","arp","latch","division","record","play"}
+  local engine_params={}
+  engine_params["MxSamples"]={"mx_instrument"}
+  local reload_params = function(v)
+    for _,param_name in ipairs(param_names) do
+      params:show(v..param_name)
+      params:hide((3-v)..param_name)
+    end
+    for eng,param_list in pairs(engine_params) do
+      if self.engine_options[params:get("mandoengine")]==eng then 
+        for _, param_name in ipairs(param_list) do
+          params:show(v..param_name)
+          params:hide((3-v)..param_name)
+        end
+      else
+        for _, param_name in ipairs(param_list) do
+          for j=1,2 do
+            params:hide(j..param_name)
+          end
+        end
+      end
+    end
+  end
+
   params:add_group("MANDOGUITAR",9*2+3)
   params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options}
   params:add{type='binary',name='change engine',id='change engine',behavior='trigger',action=function(v)
@@ -136,18 +159,11 @@ function Plonk:setup_params()
       print("loaded "..name)
     end)
     engine.name=name
+    reload_params(params:get("voice"))
   end}
   params:add_separator("voices")
   params:add{type="number",id="voice",name="voice",min=1,max=2,default=1,action=function(v)
-    for _,param_name in ipairs(param_names) do
-      params:show(v..param_name)
-      params:hide((3-v)..param_name)
-    end
-    if self.engine_options[params:get("mandoengine")]=="MxSamples" then
-      params:show(v.."mx_instrument")
-      params:hide((3-v).."mx_instrument")
-    end
-
+    reload_params(v)
     _menu.rebuild_params()
   end}
   for i=1,self.num_voices do
