@@ -25,7 +25,9 @@ function enc(k,d)
 end
 
 function key(k,z)
-
+  if k>=2 and z==1 then 
+    mg:record_add_rest_or_legato(k-1)
+  end
 end
 
 
@@ -33,12 +35,20 @@ function redraw()
   screen.clear()
   screen.level(15)
   for i=1,2 do
-    screen.move(1+64*(i-1),10)
     screen.font_size(8)
-    screen.text(params:get(i.."current_note"))
-    screen.move(28+64*(i-1),46)
+
+    if params:get(i.."record")==1 then
+      screen.move(1+64*(i-1),10)
+      screen.text(mg:get_cluster(i))
+      screen.move(12+68*(i-1),54)
+      screen.text("recording")
+    else
+      screen.move(1+64*(i-1),10)
+      screen.text(params:get(i.."current_note"))
+    end
+    screen.move(28+68*(i-1),46)
     screen.font_size(48)
-    screen.text_center("1")
+    screen.text_center(mg.voices[i].record_step)
   end
   screen.update()
 end

@@ -1,4 +1,4 @@
--- local json=include("plonk/lib/json")
+local json=include("plonk/lib/json")
 local lattice=require("lattice")
 local MusicUtil=require "musicutil"
 local mxsamples=include("mx.samples/lib/mx.samples")
@@ -65,8 +65,6 @@ function Plonk:new(args)
   for i=1,m.num_voices do
     m.voices[i]={
       division=8,-- 8 = quartner notes
-      is_playing=false,
-      is_recording=false,
       steps={},
       step=0,
       step_val=0,
@@ -76,6 +74,8 @@ function Plonk:new(args)
       latched={},
       arp_last="",
       arp_step=1,
+      record_steps={},
+      record_step=0,
     }
   end
 
@@ -166,7 +166,10 @@ function Plonk:setup_params()
     params:add{type="option",id=i.."division",name="division",options=division_names,default=7}
     params:add{type="binary",id=i.."arp",name="arp",behavior="toggle",default=0}
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
-    params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle"}
+    params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=1,action=function(v)
+      self.voices[voice].record_step=0
+      self.voices[voice].record_steps={}
+    end}
     params:add{type="binary",id=i.."play",name="play",behavior="toggle"}
     params:add_text(i.."current_note",i.."current_note","")
     params:hide(i.."current_note")
@@ -338,6 +341,25 @@ function Plonk:get_visual()
   return self.visual
 end
 
+function Plonk:record_add_rest_or_legato(voice)
+  if params:get(voice.."record")==0 then do return end end 
+  local wtd="." -- rest 
+  if self.debug then 
+    print("cluster ",json.encode(self.voices[voice].cluster))
+    print("record_steps ",json.encode(self.voices[voice].record_steps))
+  end
+
+  if next(self.voices[voice].cluster)~=nil then
+    wtd="-"
+    table.insert(self.voices[voice].record_steps,self.voices[voice].cluster)
+    self.voices[voice].cluster={}
+  elseif next(self.voices[voice].record_steps) ~= nil and self.voices[voice].record_steps[#self.voices[voice].record_steps][1]=="-" then
+    wtd="-"
+  end
+  table.insert(self.voices[voice].record_steps,{wtd})
+  self.voices[voice].record_step = self.voices[voice].record_step + 1
+end
+
 function Plonk:key_press(row,col,on)
   if self.grid64 and not self.grid64default then
     col=col+8
@@ -360,6 +382,10 @@ function Plonk:key_press(row,col,on)
 
   -- add to note cluster
   if on then
+    if next(self.voices[voice].cluster)==nil and params:get(voice.."record")==1 then
+      -- new record!
+      self.voices[voice].record_step = self.voices[voice].record_step + 1 
+    end
     self.voices[voice].pressed[rc]=ct
     table.insert(self.voices[voice].cluster,rc)
   else
@@ -370,9 +396,15 @@ function Plonk:key_press(row,col,on)
     end
     if num_pressed==0 then
       -- add the previous presses to note cluster
-      self.voices[voice].latched={}
-      for _,c in ipairs(self.voices[voice].cluster) do
-        table.insert(self.voices[voice].latched,c)
+      if params:get(voice.."record")==1 then
+        if next(self.voices[voice].cluster) ~= nil then
+          table.insert(self.voices[voice].record_steps,self.voices[voice].cluster)
+        end
+        if self.debug then 
+          print(json.encode(self.voices[voice].record_steps))
+        end
+      else
+        self.voices[voice].latched=self.voices[voice].cluster
       end
       -- reset cluster
       self.voices[voice].cluster={}
@@ -381,6 +413,7 @@ function Plonk:key_press(row,col,on)
 
   self:press_note(row,col,on)
 end
+
 
 function Plonk:press_note(row,col,on)
   -- determine voice
@@ -412,6 +445,22 @@ function Plonk:press_note(row,col,on)
   end
 end
 
+function Plonk:get_cluster(voice)
+  s = ""
+  for _, rc in ipairs(self.voices[voice].cluster) do
+      local row,col=rc:match("(%d+),(%d+)")
+      row=tonumber(row)
+      col=tonumber(col)
+      local note_name=rc
+      if col ~= nil and row ~= nil then
+        local note = self:get_note_from_pos(voice,row,col)
+        note_name = MusicUtil.note_num_to_name(note,true)
+      end
+      s = s..note_name.." "
+  end
+  return s
+end
+
 function Plonk:get_note_from_pos(voice,row,col)
   if voice==2 then
     col=col-8
@@ -431,6 +480,23 @@ function Plonk:get_keys_sorted_by_value(tbl)
 
   table.sort(keys,function(a,b)
     return sortFunction(tbl[a],tbl[b])
+  end)
+
+  return keys,keys_length
+end
+
+function Plonk:get_keys_sorted_by_key(tbl)
+  sortFunction=function(a,b) return a<b end
+
+  local keys={}
+  local keys_length=0
+  for key in pairs(tbl) do
+    keys_length=keys_length+1
+    table.insert(keys,key)
+  end
+
+  table.sort(keys,function(a,b)
+    return sortFunction(a,b)
   end)
 
   return keys,keys_length
