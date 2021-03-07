@@ -77,6 +77,7 @@ function Plonk:new(args)
       arp_step=1,
       record_steps={},
       record_step=1,
+      record_step_adj=0,
       play_steps={},
       play_step=1,
     }
@@ -195,16 +196,23 @@ function Plonk:setup_params()
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
     params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=0,action=function(v)
       if v==1 then
-        self.voices[i].record_step=0
+        self.voices[i].record_step=1
         self.voices[i].record_steps={}
       elseif v==0 and self.voices[i].record_step>0 then
+        if self.debug then
+          print(json.encode(self.voices[i].record_steps))
+        end
         self.voices[i].play_steps=json.decode(json.encode(self.voices[i].record_steps))
       end
     end}
     params:add{type="binary",id=i.."play",name="play",behavior="toggle",action=function(v)
       if v==1 then
-        print("playing "..i)
-        self.voices[i].play_step=1
+        if self.voices[i].play_steps[1]~=nil then
+          print("playing "..i)
+          self.voices[i].play_step=0
+        else
+          params:set(i.."play",0)
+        end
       else
         print("stopping "..i)
       end
@@ -263,6 +271,10 @@ function Plonk:emit_note(division,step)
   for i=1,self.num_voices do
     if params:get(i.."play")==1 and divisions[params:get(i.."division")]==division then
       local num_steps=#self.voices[i].play_steps
+      self.voices[i].play_step=self.voices[i].play_step+1
+      if self.voices[i].play_step>num_steps then
+        self.voices[i].play_step=1
+      end
       local ind=self.voices[i].play_step
       local ind2=self.voices[i].play_step+1
       if ind2>num_steps then
@@ -270,30 +282,31 @@ function Plonk:emit_note(division,step)
       end
       local rcs=self.voices[i].play_steps[ind]
       local rcs_next=self.voices[i].play_steps[ind2]
-      print("rcs",json.encode(rcs))
-      print("rcs_next",json.encode(rcs_next))
-      if rcs[1]~="-" and rcs[1]~="." then
-        self.voices[i].play_last={}
-        for _,key in ipairs(rcs) do
-          local row,col=key:match("(%d+),(%d+)")
-          row=tonumber(row)
-          col=tonumber(col)
-          self:press_note(row,col,true)
-          table.insert(self.voices[i].play_last,{row,col})
-        end
-      end
-      if rcs_next[1]~="-" and self.voices[i].play_last~=nil then
-        clock.run(function()
-          clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
-          for _,rc in ipairs(self.voices[i].play_last) do
-            self:press_note(rc[1],rc[2],false)
+      if rcs~=nil and rcs_next~=nil then
+        -- print("----------")
+        -- print(ind,"rcs",json.encode(rcs))
+        -- print(ind2,"rcs_next",json.encode(rcs_next))
+        if rcs[1]~="-" and rcs[1]~="." then
+          self.voices[i].play_last={}
+          for _,key in ipairs(rcs) do
+            local row,col=key:match("(%d+),(%d+)")
+            row=tonumber(row)
+            col=tonumber(col)
+            print("playing",row,col)
+            self:press_note(row,col,true)
+            table.insert(self.voices[i].play_last,{row,col})
           end
-          self.voices[i].play_last=nil
-        end)
-      end
-      self.voices[i].play_step=self.voices[i].play_step+1
-      if self.voices[i].play_step>num_steps then
-        self.voices[i].play_step=1
+        end
+        if rcs_next[1]~="-" and self.voices[i].play_last~=nil then
+          clock.run(function()
+            clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
+            for _,rc in ipairs(self.voices[i].play_last) do
+              self:press_note(rc[1],rc[2],false)
+            end
+            self.voices[i].play_last=nil
+          end)
+        end
+        update=true
       end
     end
     if params:get(i.."arp")==1 and divisions[params:get(i.."division")]==division then
@@ -322,10 +335,12 @@ function Plonk:emit_note(division,step)
         end)
         self.voices[i].arp_step=self.voices[i].arp_step+1
       end
+      update=true
     end
   end
   if update then
     self:grid_redraw()
+    redraw()
   end
 end
 
@@ -413,13 +428,37 @@ local wtd="." -- rest
 
   if next(self.voices[voice].cluster)~=nil then
     wtd="-"
-    table.insert(self.voices[voice].record_steps,self.voices[voice].cluster)
+    self.voices[voice].record_steps[self.voices[voice].record_step]=self.voices[voice].cluster
+    self:record_update_step(voice)
     self.voices[voice].cluster={}
   elseif next(self.voices[voice].record_steps)~=nil and self.voices[voice].record_steps[#self.voices[voice].record_steps][1]=="-" then
     wtd="-"
   end
   table.insert(self.voices[voice].record_steps,{wtd})
+  self.voices[voice].record_steps[self.voices[voice].record_step]={wtd}
+  self:record_update_step(voice)
+end
+
+function Plonk:record_update_step(voice)
+  if self.debug then
+    print("record_update_step",json.encode(self.voices[voice].record_steps))
+  end
   self.voices[voice].record_step=self.voices[voice].record_step+1
+
+  -- check adjustment
+  if self.voices[voice].record_step_adj==0 then do return end end
+-- erase steps
+  local last=self.voices[voice].record_steps[#self.voices[voice].record_steps]
+  for i=self.voices[voice].record_step_adj-1,0 do
+    self.voices[voice].record_steps[self.voices[voice].record_step+i]=nil
+  end
+  self.voices[voice].record_step=self.voices[voice].record_step+self.voices[voice].record_step_adj-1
+  self.voices[voice].record_steps[self.voices[voice].record_step]=last
+  self.voices[voice].record_step=self.voices[voice].record_step+1
+  self.voices[voice].record_step_adj=0
+  if self.debug then
+    print("record_update_step (adj)",json.encode(self.voices[voice].record_steps))
+  end
 end
 
 function Plonk:key_press(row,col,on)
@@ -444,10 +483,6 @@ function Plonk:key_press(row,col,on)
 
   -- add to note cluster
   if on then
-    if next(self.voices[voice].cluster)==nil and params:get(voice.."record")==1 then
-      -- new record!
-      self.voices[voice].record_step=self.voices[voice].record_step+1
-    end
     self.voices[voice].pressed[rc]=ct
     table.insert(self.voices[voice].cluster,rc)
   else
@@ -460,7 +495,8 @@ function Plonk:key_press(row,col,on)
       -- add the previous presses to note cluster
       if params:get(voice.."record")==1 then
         if next(self.voices[voice].cluster)~=nil then
-          table.insert(self.voices[voice].record_steps,self.voices[voice].cluster)
+          self.voices[voice].record_steps[self.voices[voice].record_step]=self.voices[voice].cluster
+          self:record_update_step(voice)
         end
         if self.debug then
           print(json.encode(self.voices[voice].record_steps))
