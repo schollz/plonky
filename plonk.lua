@@ -5,7 +5,7 @@
 
 local plonk=include("plonk/lib/plonk")
 local shift=false
-
+local arplatch = 0
 
 function init()
   mg=plonk:new({grid_on=true,toggleable=true})
@@ -21,7 +21,21 @@ end
 
 
 function enc(k,d)
-
+  if k>1 and params:get((k-1).."record")==0 then 
+    -- toggle arp/latch
+    d = sign(d)
+    arplatch = util.clamp(arplatch+d,0,2)
+    if arplatch==0 then 
+      params:set((k-1).."arp",0)
+      params:set((k-1).."latch",0)
+    elseif arplatch==1 then 
+      params:set((k-1).."arp",1)
+      params:set((k-1).."latch",0)
+    else
+      params:set((k-1).."arp",1)
+      params:set((k-1).."latch",1)
+    end
+  end
 end
 
 function key(k,z)
@@ -56,14 +70,20 @@ function redraw()
       screen.move(1+64*(i-1),10)
       screen.text(mg:get_cluster(i))
     else
-      screen.move(1+64*(i-1),10)
-      screen.text(params:get(i.."current_note"))
+      screen.move(30+72*(i-1),10)
+      screen.text_center(params:get(i.."current_note"))
     end
     screen.move(30+72*(i-1),54)
     if params:get(i.."play")==1 then
       screen.text_center("playing")
     elseif params:get(i.."record")==1 then
       screen.text_center("recording")
+    end
+    screen.move(30+72*(i-1),63)
+    if params:get(i.."arp")==1 and params:get(i.."latch")==1 then 
+      screen.text_center("arp+latch")
+    elseif params:get(i.."arp")==1 then 
+      screen.text_center("arp")
     end
     screen.move(28+72*(i-1),46)
     screen.font_size(48)
@@ -78,4 +98,14 @@ end
 
 function rerun()
   norns.script.load(norns.state.script)
+end
+
+function sign(x)
+  if x>0 then
+    return 1
+  elseif x<0 then
+    return-1
+  else
+    return 0
+  end
 end
