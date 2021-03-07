@@ -4,8 +4,6 @@ local MusicUtil=require "musicutil"
 local mxsamples=include("mx.samples/lib/mx.samples")
 
 
-engine.name="MxSamples" -- default engine
-
 local Plonk={}
 local divisions={1,2,4,6,8,12,16,24,32}
 local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
@@ -58,6 +56,9 @@ function Plonk:new(args)
   m.pressed_buttons={} -- keep track of where fingers press
   m.pressed_notes={} -- arp and patterns
 
+  -- debounce engine switching
+  m.updateengine=0
+
   -- define num voices
   m.num_voices=2
 
@@ -106,6 +107,12 @@ function Plonk:new(args)
   m.grid_refresh=metro.init()
   m.grid_refresh.time=0.1
   m.grid_refresh.event=function()
+    if m.updateengine>0 then
+      m.updateengine=m.updateengine-1
+      if m.updateengine==0 then
+        m:update_engine()
+      end
+    end
     if m.grid_on then
       m:grid_redraw()
     end
@@ -123,51 +130,56 @@ function Plonk:new(args)
   return m
 end
 
-function Plonk:setup_params()
-  self.engine_options={"MxSamples","PolyPerc"}
-  self.engine_loaded=true
+function Plonk:update_engine()
+  local name=self.engine_options[params:get("mandoengine")]
+  print("loading "..name)
+  self.engine_loaded=false
+  engine.load(name,function()
+    self.engine_loaded=true
+    print("loaded "..name)
+  end)
+  engine.name=name
+  self:reload_params(params:get("voice"))
+end
 
-  local param_names={"scale","root","tuning","arp","latch","division","record","play"}
-  local engine_params={}
-  engine_params["MxSamples"]={"mx_instrument","mx_velocity"}
-  engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
-  local reload_params=function(v)
-    for _,param_name in ipairs(param_names) do
-      params:show(v..param_name)
-      params:hide((3-v)..param_name)
-    end
-    for eng,param_list in pairs(engine_params) do
-      if engine.name==eng then
-        for _,param_name in ipairs(param_list) do
-          params:show(v..param_name)
-          params:hide((3-v)..param_name)
-        end
-      else
-        for _,param_name in ipairs(param_list) do
-          for j=1,2 do
-            params:hide(j..param_name)
-          end
+function Plonk:reload_params(v)
+  for _,param_name in ipairs(self.param_names) do
+    params:show(v..param_name)
+    params:hide((3-v)..param_name)
+  end
+  for eng,param_list in pairs(self.engine_params) do
+    if engine.name==eng then
+      for _,param_name in ipairs(param_list) do
+        params:show(v..param_name)
+        params:hide((3-v)..param_name)
+      end
+    else
+      for _,param_name in ipairs(param_list) do
+        for j=1,2 do
+          params:hide(j..param_name)
         end
       end
     end
   end
+end
 
-  params:add_group("MANDOGUITAR",15*2+3)
-  params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options}
-  params:add{type='binary',name='change engine',id='change engine',behavior='trigger',action=function(v)
-    local name=self.engine_options[params:get("mandoengine")]
-    print("loading "..name)
-    self.engine_loaded=false
-    engine.load(name,function()
-      self.engine_loaded=true
-      print("loaded "..name)
-    end)
-    engine.name=name
-    reload_params(params:get("voice"))
+function Plonk:setup_params()
+  self.engine_loaded=false
+  self.engine_options={"MxSamples","PolyPerc"}
+
+  self.param_names={"scale","root","tuning","arp","latch","division","record","play"}
+  self.engine_params={}
+  self.engine_params["MxSamples"]={"mx_instrument","mx_velocity"}
+  self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
+
+
+  params:add_group("MANDOGUITAR",15*2+2)
+  params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options,action=function()
+    self.updateengine=10
   end}
   params:add_separator("voices")
   params:add{type="number",id="voice",name="voice",min=1,max=2,default=1,action=function(v)
-    reload_params(v)
+    self:reload_params(v)
     _menu.rebuild_params()
   end}
   for i=1,self.num_voices do
@@ -224,7 +236,8 @@ function Plonk:setup_params()
     params:add_text(i.."play_steps",i.."play_steps","")
     params:hide(i.."play_steps")
   end
-  reload_params(1)
+  self:reload_params(1)
+  self:update_engine()
 end
 
 function Plonk:build_scale()
