@@ -208,7 +208,7 @@ function Plonk:setup_params()
     end}
     params:add{type="binary",id=i.."play",name="play",behavior="toggle",action=function(v)
       if v==1 then
-        if params:get(i.."play_steps")~="[]" and params:get(i.."play_steps") ~="" then
+        if params:get(i.."play_steps")~="[]" and params:get(i.."play_steps")~="" then
           print("playing "..i)
           self.voices[i].play_steps=json.decode(params:get(i.."play_steps"))
           self.voices[i].play_step=0
