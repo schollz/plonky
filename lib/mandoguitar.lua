@@ -247,7 +247,7 @@ function Mandoguitar:emit_note(division,step)
           key = keys[(self.voices[i].arp_step)%keys_len+1]
           key_next = keys[(self.voices[i].arp_step+1)%keys_len+1]
         end
-        if key~="-" then 
+        if (key~="-" and key~=".") then 
           local row,col=key:match("(%d+),(%d+)")
           row = tonumber(row)
           col = tonumber(col)
