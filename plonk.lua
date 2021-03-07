@@ -4,7 +4,7 @@
 
 
 local plonk=include("plonk/lib/plonk")
-
+local shift=false
 
 
 function init()
@@ -25,8 +25,16 @@ function enc(k,d)
 end
 
 function key(k,z)
-  if k>=2 and z==1 then 
+  if k==1 then 
+    shift=z==1
+  elseif shift and z==1 then 
+    params:delta((k-1).."record")
+    params:set((k-1).."play",0)
+  elseif params:get((k-1).."record")==1 and z==1 then
     mg:record_add_rest_or_legato(k-1)
+  elseif z==1 then -- stop/start
+    params:delta((k-1).."play")
+    params:set((k-1).."record",0)
   end
 end
 
@@ -40,11 +48,15 @@ function redraw()
     if params:get(i.."record")==1 then
       screen.move(1+64*(i-1),10)
       screen.text(mg:get_cluster(i))
-      screen.move(12+68*(i-1),54)
-      screen.text("recording")
     else
       screen.move(1+64*(i-1),10)
       screen.text(params:get(i.."current_note"))
+    end
+    screen.move(12+68*(i-1),54)
+    if params:get(i.."play")==1 then
+      screen.text("playing")
+    elseif params:get(i.."record")==1 then
+      screen.text("recording")
     end
     screen.move(28+68*(i-1),46)
     screen.font_size(48)

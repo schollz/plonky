@@ -166,11 +166,17 @@ function Plonk:setup_params()
     params:add{type="option",id=i.."division",name="division",options=division_names,default=7}
     params:add{type="binary",id=i.."arp",name="arp",behavior="toggle",default=0}
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
-    params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=1,action=function(v)
-      self.voices[voice].record_step=0
-      self.voices[voice].record_steps={}
+    params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=0,action=function(v)
+      self.voices[i].record_step=0
+      self.voices[i].record_steps={}
     end}
-    params:add{type="binary",id=i.."play",name="play",behavior="toggle"}
+    params:add{type="binary",id=i.."play",name="play",behavior="toggle",action=function(v)
+      if v==1 then
+        print("playing "..i)
+      else
+        print("stopping "..i)
+      end
+    end}
     params:add_text(i.."current_note",i.."current_note","")
     params:hide(i.."current_note")
   end
