@@ -9,6 +9,13 @@ local mandoguitar=include("mandoguitar/lib/mandoguitar")
 
 function init()
   mg=mandoguitar:new({grid_on=true,toggleable=true})
+  clock.run(function()
+    while true do
+      clock.sleep(1/10) -- refresh
+      redraw()
+    end
+  end) -- start the grid redraw clock
+
 end
 
 
@@ -24,7 +31,15 @@ end
 
 function redraw()
   screen.clear()
-
+  screen.level(15)
+  for i=1,2 do
+    screen.move(1+64*(i-1),10)
+    screen.font_size(8)
+    screen.text(params:get(i.."current_note"))
+    screen.move(28+64*(i-1),46)
+    screen.font_size(48)
+    screen.text_center("1")
+  end
   screen.update()
 end
 

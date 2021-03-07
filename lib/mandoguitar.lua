@@ -56,7 +56,6 @@ function Mandoguitar:new(args)
 
   -- keep track of pressed buttons
   m.pressed_buttons={} -- keep track of where fingers press
-  m.pressed_notes={} -- keep track of all notes on (from seqeuencer + fingers)
 
   -- define num voices
   m.num_voices=2
@@ -168,6 +167,8 @@ function Mandoguitar:setup_params()
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
     params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle"}
     params:add{type="binary",id=i.."play",name="play",behavior="toggle"}
+    params:add_text(i.."current_note",i.."current_note","")
+    params:hide(i.."current_note")
   end
   for _, param_name in ipairs(param_names) do
     params:hide("2"..param_name)
@@ -177,8 +178,10 @@ end
 
 function Mandoguitar:build_scale()
   for i=1,2 do 
-    self.voices[i].scale = MusicUtil.generate_scale_of_length(params:get(i.."root"), self.scale_names[params:get(i.."scale")], 128)
+    self.voices[i].scale = MusicUtil.generate_scale_of_length(params:get(i.."root"), self.scale_names[params:get(i.."scale")], 168)
   end
+  print("scale start: "..self.voices[1].scale[1])
+  print("scale start: "..self.voices[2].scale[1])
 end
 
 function Mandoguitar:toggle_grid64_side()
@@ -234,7 +237,7 @@ function Mandoguitar:emit_note(division,step)
         keys = self.voices[i].latched
         keys_len = #keys
       else
-         keys,keys_len = self:get_notes_down(i)
+         keys,keys_len = self:get_keys_sorted_by_value(self.voices[i].pressed)
       end
       if keys_len > 0 then 
         local key = keys[1]
@@ -257,7 +260,6 @@ function Mandoguitar:emit_note(division,step)
     self:grid_redraw()
   end
 end
-
 
 
 function Mandoguitar:get_visual()
@@ -290,6 +292,7 @@ function Mandoguitar:get_visual()
     end
   end
 
+
   for i=1,self.num_voices do
   end
 
@@ -310,9 +313,17 @@ function Mandoguitar:get_visual()
   end
 
   -- illuminate currently pressed notes
-  for k,_ in pairs(self.pressed_notes) do
-    local row,col=k:match("(%d+),(%d+)")
-    self.visual[tonumber(row)][tonumber(col)]=15
+  for i=1,2 do
+    params:set(i.."current_note","")
+    for _,k in ipairs(self:get_keys_sorted_by_value(self.voices[i].pressed)) do
+      local row,col=k:match("(%d+),(%d+)")
+      row = tonumber(row)
+      col = tonumber(col)
+      self.visual[row][col]=15
+      local note = self:get_note_from_pos(i,row,col)
+      print("note: ",note)
+      params:set(i.."current_note",params:get(i.."current_note").." "..MusicUtil.note_num_to_name(note,true))
+    end
   end
 
 
@@ -365,16 +376,9 @@ function Mandoguitar:key_press(row,col,on)
 end
 
 function Mandoguitar:press_note(row,col,on)
-  if on then
-    self.pressed_notes[row..","..col]=self:current_time()
-  else
-    self.pressed_notes[row..","..col]=nil
-  end
-
   -- determine voice
   local voice = 1
   if col > 8 then 
-    col = col - 8
     voice = 2
   end
 
@@ -402,12 +406,14 @@ function Mandoguitar:press_note(row,col,on)
 end
 
 function Mandoguitar:get_note_from_pos(voice,row,col)
+  if voice == 2 then 
+    col = col - 8
+  end
   return self.voices[voice].scale[(params:get(voice.."tuning")-1)*(col-1)+(9-row)]
 end
 
-function Mandoguitar:get_notes_down(voice)
+function Mandoguitar:get_keys_sorted_by_value(tbl)
   sortFunction = function(a, b) return a < b end
-  local tbl = self.voices[voice].pressed
 
   local keys = {}
   local keys_length=0
