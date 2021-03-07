@@ -1,8 +1,11 @@
-local json=include("plonk/lib/json")
+local json=include("plonk/lib/json") -- todo load faster library
 local lattice=require("lattice")
 local MusicUtil=require "musicutil"
-local mxsamples=include("mx.samples/lib/mx.samples")
 
+local mxsamples=nil
+if util.file_exists(_path.code.."mx.samples") then
+  mxsamples=include("mx.samples/lib/mx.samples")
+end
 
 local Plonk={}
 local divisions={1,2,4,6,8,12,16,24,32}
@@ -18,8 +21,13 @@ function Plonk:new(args)
   m.scene="a"
 
   -- initiate mx samples
-  self.mx=mxsamples:new()
-  self.instrument_list=self.mx:list_instruments()
+  if mxsamples~=nil then
+    self.mx=mxsamples:new()
+    self.instrument_list=self.mx:list_instruments()
+  else
+    self.mx=nil 
+    self.instrument_list={}
+  end
 
   -- initiate the grid
   m.g=grid.connect()
@@ -166,8 +174,10 @@ end
 
 function Plonk:setup_params()
   self.engine_loaded=false
-  self.engine_options={"MxSamples","PolyPerc"}
-
+  self.engine_options={"PolyPerc"}
+if mxsamples~=nil then
+  table.insert(self.engine_options,"MxSamples")
+end
   self.param_names={"scale","root","tuning","arp","latch","division","record","play"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity"}
