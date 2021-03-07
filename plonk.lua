@@ -67,10 +67,10 @@ function redraw()
     screen.font_size(8)
 
     if params:get(i.."record")==1 then
-      screen.move(1+64*(i-1),10)
-      screen.text(mg:get_cluster(i))
+      screen.move(26+72*(i-1),10)
+      screen.text_center(mg:get_cluster(i))
     else
-      screen.move(30+72*(i-1),10)
+      screen.move(26+72*(i-1),10)
       screen.text_center(params:get(i.."current_note"))
     end
     screen.move(30+72*(i-1),54)
