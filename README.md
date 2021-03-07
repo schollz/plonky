@@ -28,6 +28,8 @@ each 8x8 section of the grid is a voice (1 voice for 64-grid, 2 voices for 128-g
 
 ### Install
 
+https://github.com/schollz/plonky
+
 from maiden:
 
 ```

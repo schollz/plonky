@@ -1,4 +1,4 @@
--- plonky v1.0.0
+-- plonky v1.1.0
 -- keyboard + sequencer
 --
 -- llllllll.co/t/plonky
@@ -35,16 +35,23 @@ function enc(k,d)
   if k>1 and params:get((k-1).."record")==0 then
     -- toggle arp/latch
     d=sign(d)
-    arplatch=util.clamp(arplatch+d,0,2)
+    arplatch=util.clamp(arplatch+d,0,3)
     if arplatch==0 then
       params:set((k-1).."arp",0)
       params:set((k-1).."latch",0)
+      params:set((k-1).."mute_non_arp",0)
     elseif arplatch==1 then
       params:set((k-1).."arp",1)
       params:set((k-1).."latch",0)
+      params:set((k-1).."mute_non_arp",0)
+    elseif arplatch==2 then
+      params:set((k-1).."arp",1)
+      params:set((k-1).."latch",1)
+      params:set((k-1).."mute_non_arp",0)
     else
       params:set((k-1).."arp",1)
       params:set((k-1).."latch",1)
+      params:set((k-1).."mute_non_arp",1)
     end
   elseif k>1 and params:get((k-1).."record")==1 then
     mg.voices[k-1].record_step_adj=util.clamp(mg.voices[k-1].record_step_adj+sign(d),-1*mg.voices[k-1].record_step,0)
@@ -97,7 +104,9 @@ function redraw()
       screen.text_center("recording")
     end
     screen.move(30+72*(i-1),63)
-    if params:get(i.."arp")==1 and params:get(i.."latch")==1 then
+    if params:get(i.."arp")==1 and params:get(i.."latch")==1 and params:get(i.."mute_non_arp")==1 then
+      screen.text_center("arp+latch only")
+    elseif params:get(i.."arp")==1 and params:get(i.."latch")==1 then
       screen.text_center("arp+latch")
     elseif params:get(i.."arp")==1 then
       screen.text_center("arp")

@@ -20,6 +20,22 @@ function Plonky:new(args)
 
   m.scene="a"
 
+  -- initiate midi connections
+  m.device={}
+  m.device_list={"none"}
+  for _,dev in pairs(midi.devices) do
+    if dev.port~=nil then
+      local name = string.lower(dev.name)
+      table.insert(m.device_list,name)
+      print("adding "..name.." to port "..dev.port)
+      m.device[name]={
+        name=dev.name,
+        port=dev.port,
+        midi=midi.connect(dev.port),
+      }
+    end
+  end  
+
   -- initiate mx samples
   if mxsamples~=nil then
     self.mx=mxsamples:new()
@@ -181,13 +197,13 @@ function Plonky:setup_params()
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
   end
-  self.param_names={"scale","root","tuning","arp","latch","division","record","play"}
+  self.param_names={"scale","root","tuning","arp","latch","division","record","play","engine_enabled","midi","mute_non_arp"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",18*2+2)
+  params:add_group("PLONKY",21*2+2)
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
     self.updateengine=4
   end}
@@ -196,6 +212,9 @@ function Plonky:setup_params()
     _menu.rebuild_params()
   end}
   for i=1,self.num_voices do
+    -- midi out
+    params:add{type="option",id=i.."midi",name="midi out",options=self.device_list,default=1}
+    params:add{type="option",id=i.."engine_enabled",name="enable engine",options={"no","yes"},default=2}
     -- MxSamples parameters
     params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=10}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
@@ -223,6 +242,7 @@ function Plonky:setup_params()
     params:add{type="option",id=i.."division",name="division",options=division_names,default=7}
     params:add{type="binary",id=i.."arp",name="arp",behavior="toggle",default=0}
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
+    params:add{type="binary",id=i.."mute_non_arp",name="mute non-arp",behavior="toggle",default=0}
     params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=0,action=function(v)
       if v==1 then
         self.voices[i].record_step=0
@@ -555,11 +575,11 @@ function Plonky:key_press(row,col,on)
     end
   end
 
-  self:press_note(row,col,on)
+  self:press_note(row,col,on,true)
 end
 
 
-function Plonky:press_note(row,col,on)
+function Plonky:press_note(row,col,on,is_finger)
   if on then
     self.pressed_notes[row..","..col]=true
   else
@@ -572,6 +592,15 @@ function Plonky:press_note(row,col,on)
     voice=2
   end
 
+  -- determine if muted
+  print(is_finger)
+  if is_finger ~= nil and is_finger then
+    if params:get(voice.."arp")==1 and params:get(voice.."mute_non_arp")==1 then
+      do return end
+    end
+  end
+
+
   -- determine note
   local note=self:get_note_from_pos(voice,row,col)
 
@@ -579,26 +608,39 @@ function Plonky:press_note(row,col,on)
   if not self.engine_loaded then
     do return end
   end
-  if engine.name=="MxSamples" then
-    if on then
-      self.mx:on({
-        name=self.instrument_list[params:get(voice.."mx_instrument")],
-        midi=note,
-        velocity=params:get(voice.."mx_velocity"),
-        amp=params:get(voice.."mx_amp"),
-        release=params:get(voice.."mx_release"),
-        pan=params:get(voice.."mx_pan"),
-      })
-    else
-      self.mx:off({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note})
+  if params:get(voice.."engine_enabled")==2 then
+    if engine.name=="MxSamples" then
+      if on then
+        self.mx:on({
+          name=self.instrument_list[params:get(voice.."mx_instrument")],
+          midi=note,
+          velocity=params:get(voice.."mx_velocity"),
+          amp=params:get(voice.."mx_amp"),
+          release=params:get(voice.."mx_release"),
+          pan=params:get(voice.."mx_pan"),
+        })
+      else
+        self.mx:off({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note})
+      end
+    elseif engine.name=="PolyPerc" then
+      if on then
+        engine.amp(params:get(voice.."pp_amp"))
+        engine.release(params:get(voice.."pp_release"))
+        engine.cutoff(params:get(voice.."pp_cut"))
+        engine.pw(params:get(voice.."pp_pw")/100)
+        engine.hz(MusicUtil.note_num_to_freq(note))
+      end
     end
-  elseif engine.name=="PolyPerc" then
-    if on then
-      engine.amp(params:get(voice.."pp_amp"))
-      engine.release(params:get(voice.."pp_release"))
-      engine.cutoff(params:get(voice.."pp_cut"))
-      engine.pw(params:get(voice.."pp_pw")/100)
-      engine.hz(MusicUtil.note_num_to_freq(note))
+  end
+
+  if params:get(voice.."midi")>1 then 
+    if on then 
+      if self.debug then
+        print(note.." -> "..self.device_list[params:get(voice.."midi")])
+      end
+      self.device[self.device_list[params:get(voice.."midi")]].midi:note_on(note,80)
+    else
+      self.device[self.device_list[params:get(voice.."midi")]].midi:note_off(note,80)
     end
   end
 end
