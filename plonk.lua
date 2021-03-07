@@ -59,7 +59,7 @@ end
 function redraw()
   screen.clear()
   screen.level(1)
-  if shift then 
+  if shift then
     screen.level(15)
   end
   screen.move(64,1)

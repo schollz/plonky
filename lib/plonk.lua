@@ -435,7 +435,7 @@ local wtd="." -- rest
     self.voices[voice].record_steps[self.voices[voice].record_step]=self.voices[voice].cluster
     self.voices[voice].cluster={}
   elseif next(self.voices[voice].record_steps)~=nil and self.voices[voice].record_steps[#self.voices[voice].record_steps][1]=="-" and next(self.voices[voice].pressed)~=nil and next(self.voices[voice].cluster)==nil then
-    wtd="-"    
+    wtd="-"
   end
   self:record_update_step(voice)
   self.voices[voice].record_steps[self.voices[voice].record_step]={wtd}
@@ -454,8 +454,8 @@ function Plonk:record_update_step(voice)
   for i=self.voices[voice].record_step_adj,0 do
     self.voices[voice].record_steps[self.voices[voice].record_step+i]=nil
   end
-  if self.voices[voice].record_steps==nil then 
-    self.voices[voice].record_steps = {}
+  if self.voices[voice].record_steps==nil then
+    self.voices[voice].record_steps={}
   end
   self.voices[voice].record_step=self.voices[voice].record_step+self.voices[voice].record_step_adj-1
   -- self.voices[voice].record_steps[self.voices[voice].record_step]=last
