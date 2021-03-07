@@ -80,6 +80,7 @@ function Plonk:new(args)
       record_step_adj=0,
       play_steps={},
       play_step=1,
+      current_note="",
     }
   end
 
@@ -202,13 +203,14 @@ function Plonk:setup_params()
         if self.debug then
           print(json.encode(self.voices[i].record_steps))
         end
-        self.voices[i].play_steps=json.decode(json.encode(self.voices[i].record_steps))
+        params:set(i.."play_steps",json.encode(self.voices[i].record_steps))
       end
     end}
     params:add{type="binary",id=i.."play",name="play",behavior="toggle",action=function(v)
       if v==1 then
-        if self.voices[i].play_steps[1]~=nil then
+        if params:get(i.."play_steps")~="[]" and params:get(i.."play_steps") ~="" then
           print("playing "..i)
+          self.voices[i].play_steps=json.decode(params:get(i.."play_steps"))
           self.voices[i].play_step=0
         else
           params:set(i.."play",0)
@@ -217,8 +219,8 @@ function Plonk:setup_params()
         print("stopping "..i)
       end
     end}
-    params:add_text(i.."current_note",i.."current_note","")
-    params:hide(i.."current_note")
+    params:add_text(i.."play_steps",i.."play_steps","")
+    params:hide(i.."play_steps")
   end
   reload_params(1)
 end
@@ -402,14 +404,14 @@ function Plonk:get_visual()
   end
   -- finger pressed notes
   for i=1,2 do
-    params:set(i.."current_note","")
+    self.voices[i].current_note=""
     for _,k in ipairs(self:get_keys_sorted_by_value(self.voices[i].pressed)) do
       local row,col=k:match("(%d+),(%d+)")
       row=tonumber(row)
       col=tonumber(col)
       self.visual[row][col]=15
       local note=self:get_note_from_pos(i,row,col)
-      params:set(i.."current_note",params:get(i.."current_note").." "..MusicUtil.note_num_to_name(note,true))
+      self.voices[i].current_note=self.voices[i].current_note.." "..MusicUtil.note_num_to_name(note,true)
     end
   end
 
