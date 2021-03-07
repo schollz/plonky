@@ -1,6 +1,6 @@
 -- local json=include("plonk/lib/json")
 local lattice=require("lattice")
-local MusicUtil = require "musicutil"
+local MusicUtil=require "musicutil"
 local mxsamples=include("mx.samples/lib/mx.samples")
 
 
@@ -13,7 +13,7 @@ local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
 function Plonk:new(args)
   local m=setmetatable({},{__index=Plonk})
   local args=args==nil and {} or args
-  m.debug = true -- args.debug TODO remove this
+  m.debug=true -- args.debug TODO remove this
   m.grid_on=args.grid_on==nil and true or args.grid_on
   m.toggleable=args.toggleable==nil and false or args.toggleable
 
@@ -21,7 +21,7 @@ function Plonk:new(args)
 
   -- initiate mx samples
   self.mx=mxsamples:new()
-  self.instrument_list = self.mx:list_instruments()
+  self.instrument_list=self.mx:list_instruments()
 
   -- initiate the grid
   m.g=grid.connect()
@@ -107,10 +107,10 @@ function Plonk:new(args)
   end
   m.grid_refresh:start()
 
-  -- setup scale 
-  m.scale_names = {}
-  for i = 1, #MusicUtil.SCALES do
-    table.insert(m.scale_names, string.lower(MusicUtil.SCALES[i].name))
+  -- setup scale
+  m.scale_names={}
+  for i=1,#MusicUtil.SCALES do
+    table.insert(m.scale_names,string.lower(MusicUtil.SCALES[i].name))
   end
 
   m:setup_params()
@@ -119,47 +119,47 @@ function Plonk:new(args)
 end
 
 function Plonk:setup_params()
-  local param_names = {"scale","root","tuning","arp","latch","division","record","play"}
-  
-  self.engine_options = {"MxSamples","PolyPerc"}
-  self.engine_loaded = true
+  local param_names={"scale","root","tuning","arp","latch","division","record","play"}
+
+  self.engine_options={"MxSamples","PolyPerc"}
+  self.engine_loaded=true
   params:add_group("MANDOGUITAR",9*2+3)
   params:add{type="option",id="mandoengine",name="mandoengine",options=self.engine_options}
   params:add{type='binary',name='change engine',id='change engine',behavior='trigger',action=function(v)
-    local name = self.engine_options[params:get("mandoengine")]
+    local name=self.engine_options[params:get("mandoengine")]
     print("loading "..name)
-    self.engine_loaded = false
-    engine.load(name, function()
-      self.engine_loaded = true
+    self.engine_loaded=false
+    engine.load(name,function()
+      self.engine_loaded=true
       print("loaded "..name)
     end)
     engine.name=name
   end}
   params:add_separator("voices")
   params:add{type="number",id="voice",name="voice",min=1,max=2,default=1,action=function(v)
-    for _, param_name in ipairs(param_names) do
+    for _,param_name in ipairs(param_names) do
       params:show(v..param_name)
       params:hide((3-v)..param_name)
     end
-    if self.engine_options[params:get("mandoengine")]=="MxSamples" then 
+    if self.engine_options[params:get("mandoengine")]=="MxSamples" then
       params:show(v.."mx_instrument")
       params:hide((3-v).."mx_instrument")
     end
 
     _menu.rebuild_params()
   end}
-  for i=1,self.num_voices do 
-    params:add{type="option",id=i.."mx_instrument",name ="instrument",options=self.instrument_list,default=10}
-    params:add{type="option",id=i.."scale",name ="scale",options=self.scale_names,default=1,action=function(v)
+  for i=1,self.num_voices do
+    params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=10}
+    params:add{type="option",id=i.."scale",name="scale",options=self.scale_names,default=1,action=function(v)
       self:build_scale()
     end}
     params:add{type="number",id=i.."root",name="root",min=0,max=36,default=24,formatter=function(param)
-       return MusicUtil.note_num_to_name(param:get(), true)
+      return MusicUtil.note_num_to_name(param:get(),true)
     end,action=function(v)
       self:build_scale()
     end}
     params:add{type="number",id=i.."tuning",name="string tuning",min=0,max=7,default=5,formatter=function(param)
-       return "+"..param:get()
+      return "+"..param:get()
     end,action=function(v)
       self:build_scale()
     end}
@@ -171,15 +171,15 @@ function Plonk:setup_params()
     params:add_text(i.."current_note",i.."current_note","")
     params:hide(i.."current_note")
   end
-  for _, param_name in ipairs(param_names) do
+  for _,param_name in ipairs(param_names) do
     params:hide("2"..param_name)
   end
   params:hide("2mx_instrument")
 end
 
 function Plonk:build_scale()
-  for i=1,2 do 
-    self.voices[i].scale = MusicUtil.generate_scale_of_length(params:get(i.."root"), self.scale_names[params:get(i.."scale")], 168)
+  for i=1,2 do
+    self.voices[i].scale=MusicUtil.generate_scale_of_length(params:get(i.."root"),self.scale_names[params:get(i.."scale")],168)
   end
   print("scale start: "..self.voices[1].scale[1])
   print("scale start: "..self.voices[2].scale[1])
@@ -228,39 +228,39 @@ function Plonk:emit_note(division,step)
       if self.voices[i].step>#self.voices[i].steps then
         self.voices[i].step=1
       end
-      
+
       update=true
     end
     if params:get(i.."arp")==1 and divisions[params:get(i.."division")]==division then
-      local keys = {}
-      local keys_len = 0
-      if params:get(i.."latch")==1 then 
-        keys = self.voices[i].latched
-        keys_len = #keys
+      local keys={}
+      local keys_len=0
+      if params:get(i.."latch")==1 then
+        keys=self.voices[i].latched
+        keys_len=#keys
       else
-         keys,keys_len = self:get_keys_sorted_by_value(self.voices[i].pressed)
+        keys,keys_len=self:get_keys_sorted_by_value(self.voices[i].pressed)
       end
-      if keys_len > 0 then 
-        local key = keys[1]
-        local key_next = keys[2]
-        if keys_len > 1 then 
-          key = keys[(self.voices[i].arp_step)%keys_len+1]
-          key_next = keys[(self.voices[i].arp_step+1)%keys_len+1]
+      if keys_len>0 then
+        local key=keys[1]
+        local key_next=keys[2]
+        if keys_len>1 then
+          key=keys[(self.voices[i].arp_step)%keys_len+1]
+          key_next=keys[(self.voices[i].arp_step+1)%keys_len+1]
         end
-        if (key~="-" and key~=".") then 
+        if (key~="-" and key~=".") then
           local row,col=key:match("(%d+),(%d+)")
-          row = tonumber(row)
-          col = tonumber(col)
+          row=tonumber(row)
+          col=tonumber(col)
           self:press_note(row,col,true)
           self.voices[i].arp_last={row,col}
         end
-        if key_next ~="-" and self.voices[i].arp_last~=nil then
+        if key_next~="-" and self.voices[i].arp_last~=nil then
           clock.run(function()
             clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
             self:press_note(self.voices[i].arp_last[1],self.voices[i].arp_last[2],false)
           end)
         end
-        self.voices[i].arp_step = self.voices[i].arp_step+1
+        self.voices[i].arp_step=self.voices[i].arp_step+1
       end
     end
   end
@@ -291,10 +291,10 @@ function Plonk:get_visual()
   -- clear visual, decaying the ntoes
   for row=1,8 do
     for col=1,self.grid_width do
-      if self.visual[row][col] > 0 then 
-        self.visual[row][col] = self.visual[row][col] - 1
-        if self.visual[row][col] < 0 then 
-          self.visual[row][col] = 0
+      if self.visual[row][col]>0 then
+        self.visual[row][col]=self.visual[row][col]-1
+        if self.visual[row][col]<0 then
+          self.visual[row][col]=0
         end
       end
     end
@@ -306,10 +306,10 @@ function Plonk:get_visual()
 
   -- show latched
   for i=1,self.num_voices do
-    if params:get(i.."latch") == 1 then
-      for _, k in ipairs(self.voices[i].latched) do 
+    if params:get(i.."latch")==1 then
+      for _,k in ipairs(self.voices[i].latched) do
         local row,col=k:match("(%d+),(%d+)")
-        self.visual[tonumber(row)][tonumber(col)]=10        
+        self.visual[tonumber(row)][tonumber(col)]=10
       end
     end
   end
@@ -325,11 +325,10 @@ function Plonk:get_visual()
     params:set(i.."current_note","")
     for _,k in ipairs(self:get_keys_sorted_by_value(self.voices[i].pressed)) do
       local row,col=k:match("(%d+),(%d+)")
-      row = tonumber(row)
-      col = tonumber(col)
+      row=tonumber(row)
+      col=tonumber(col)
       self.visual[row][col]=15
-      local note = self:get_note_from_pos(i,row,col)
-      print("note: ",note)
+      local note=self:get_note_from_pos(i,row,col)
       params:set(i.."current_note",params:get(i.."current_note").." "..MusicUtil.note_num_to_name(note,true))
     end
   end
@@ -344,8 +343,8 @@ function Plonk:key_press(row,col,on)
     col=col+8
   end
 
-  local ct = self:current_time()
-  local rc = row..","..col
+  local ct=self:current_time()
+  local rc=row..","..col
   if on then
     self.pressed_buttons[rc]=ct
   else
@@ -354,29 +353,29 @@ function Plonk:key_press(row,col,on)
 
 
   -- determine voice
-  local voice = 1
-  if col > 8 then 
-    voice = 2
+  local voice=1
+  if col>8 then
+    voice=2
   end
 
   -- add to note cluster
-  if on then 
+  if on then
     self.voices[voice].pressed[rc]=ct
     table.insert(self.voices[voice].cluster,rc)
   else
     self.voices[voice].pressed[rc]=nil
-    local num_pressed = 0 
-    for k, _ in pairs(self.voices[voice].pressed) do
-      num_pressed = num_pressed + 1
+    local num_pressed=0
+    for k,_ in pairs(self.voices[voice].pressed) do
+      num_pressed=num_pressed+1
     end
-    if num_pressed == 0 then 
-      -- add the previous presses to note cluster 
-      self.voices[voice].latched = {}
-      for _, c in ipairs(self.voices[voice].cluster) do 
+    if num_pressed==0 then
+      -- add the previous presses to note cluster
+      self.voices[voice].latched={}
+      for _,c in ipairs(self.voices[voice].cluster) do
         table.insert(self.voices[voice].latched,c)
       end
       -- reset cluster
-      self.voices[voice].cluster = {}
+      self.voices[voice].cluster={}
     end
   end
 
@@ -385,28 +384,28 @@ end
 
 function Plonk:press_note(row,col,on)
   -- determine voice
-  local voice = 1
-  if col > 8 then 
-    voice = 2
+  local voice=1
+  if col>8 then
+    voice=2
   end
 
   -- determine note
-  local note = self:get_note_from_pos(voice,row,col)
+  local note=self:get_note_from_pos(voice,row,col)
 
   -- play from engine
-  if not self.engine_loaded then 
-    do return end 
+  if not self.engine_loaded then
+    do return end
   end
-  if self.engine_options[params:get("mandoengine")] == "MxSamples" then
-    if on then 
-      local velocity = 80
+  if self.engine_options[params:get("mandoengine")]=="MxSamples" then
+    if on then
+      local velocity=80
       print(note,velocity)
       self.mx:on({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note,velocity=velocity})
     else
       self.mx:off({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note})
-    end    
-  elseif self.engine_options[params:get("mandoengine")] == "PolyPerc"  then
-    if on then 
+    end
+  elseif self.engine_options[params:get("mandoengine")]=="PolyPerc" then
+    if on then
       engine.amp(0.5)
       engine.hz(MusicUtil.note_num_to_freq(note))
     end
@@ -414,27 +413,27 @@ function Plonk:press_note(row,col,on)
 end
 
 function Plonk:get_note_from_pos(voice,row,col)
-  if voice == 2 then 
-    col = col - 8
+  if voice==2 then
+    col=col-8
   end
   return self.voices[voice].scale[(params:get(voice.."tuning")-1)*(col-1)+(9-row)]
 end
 
 function Plonk:get_keys_sorted_by_value(tbl)
-  sortFunction = function(a, b) return a < b end
+  sortFunction=function(a,b) return a<b end
 
-  local keys = {}
+  local keys={}
   local keys_length=0
   for key in pairs(tbl) do
-    keys_length = keys_length +1
-    table.insert(keys, key)
+    keys_length=keys_length+1
+    table.insert(keys,key)
   end
 
-  table.sort(keys, function(a, b)
-    return sortFunction(tbl[a], tbl[b])
+  table.sort(keys,function(a,b)
+    return sortFunction(tbl[a],tbl[b])
   end)
 
-  return keys, keys_length
+  return keys,keys_length
 end
 
 function Plonk:current_time()
