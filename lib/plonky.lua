@@ -84,17 +84,13 @@ function Plonky:new(args)
   m.updateengine=0
 
   -- define num voices
-  m.num_voices=2
+  m.num_voices=4
 
   -- setup step sequencer
   m.voices={}
   for i=1,m.num_voices do
     m.voices[i]={
       division=8,-- 8 = quartner notes
-      steps={},
-      step=0,
-      step_val=0,
-      pitch_mod_i=5,
       cluster={},
       pressed={},
       latched={},
