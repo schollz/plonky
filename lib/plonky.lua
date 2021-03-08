@@ -108,8 +108,8 @@ function Plonky:new(args)
       play_step=1,
       current_note="",
     }
-    if i%2==0 then 
-      vs = vs + 2
+    if i%2==0 then
+      vs=vs+2
     end
   end
 
@@ -349,7 +349,7 @@ function Plonky:emit_note(division,step)
     if params:get(i.."play")==1 and divisions[params:get(i.."division")]==division then
       local num_steps=#self.voices[i].play_steps
       self.voices[i].play_step=self.voices[i].play_step+1
-      if self.debug then 
+      if self.debug then
         print("playing step "..self.voices[i].play_step.."/"..num_steps)
       end
       if self.voices[i].play_step>num_steps then
@@ -435,7 +435,7 @@ function Plonky:get_visual()
     end
   end
 
-  local voice_pair = {1+self.voice_set,2+self.voice_set}
+  local voice_pair={1+self.voice_set,2+self.voice_set}
 
   -- show latched
   for i=voice_pair[1],voice_pair[2] do
@@ -482,7 +482,7 @@ end
 
 function Plonky:record_add_rest_or_legato(voice)
   if params:get(voice.."record")==0 then
-    do return end 
+    do return end
   end
   local wtd="." -- rest
   if self.debug then
@@ -602,7 +602,7 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
 
   -- determine note
   local note=self:get_note_from_pos(voice,row,col)
-  if self.debug then 
+  if self.debug then
     print("voice "..voice.." press note "..MusicUtil.note_num_to_name(note,true))
   end
 

@@ -32,7 +32,7 @@ end
 
 
 function enc(k,d)
-  if k==1 then 
+  if k==1 then
     mg.voice_set=util.clamp(mg.voice_set+2*sign(d),0,4)
   elseif k>1 and params:get((k-1+mg.voice_set).."record")==0 then
     -- toggle arp/latch
