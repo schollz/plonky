@@ -217,7 +217,7 @@ function Plonky:setup_params()
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",22*self.num_voices+2)
+  params:add_group("PLONKY",23*self.num_voices+2)
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
     self.updateengine=4
   end}
@@ -256,7 +256,14 @@ function Plonky:setup_params()
     params:add{type="option",id=i.."division",name="division",options=self.division_names,default=7}
     params:add{type="control",id=i.."legato",name="legato",controlspec=controlspec.new(1,99,'lin',1,50,'%')}
     params:add{type="binary",id=i.."arp",name="arp",behavior="toggle",default=0}
-    params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
+    params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0,action=function(v)
+      if v==1 then
+        -- load latched steps
+        if params:get(i.."latch_steps")~="" and params:get(i.."latch_steps")~="[]" then
+          self.voices[i].latched=json.decode(params:get(i.."latch_steps"))
+        end
+      end
+    end}
     params:add{type="binary",id=i.."mute_non_arp",name="mute non-arp",behavior="toggle",default=0}
     params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=0,action=function(v)
       if v==1 then
@@ -286,6 +293,8 @@ function Plonky:setup_params()
     end}
     params:add_text(i.."play_steps",i.."play_steps","")
     params:hide(i.."play_steps")
+    params:add_text(i.."latch_steps",i.."latch_steps","[]")
+    params:hide(i.."latch_steps")
   end
   -- read in the last used engine as the default
   if util.file_exists(_path.data.."plonky/engine") then
@@ -570,6 +579,7 @@ function Plonky:key_press(row,col,on)
         end
       else
         self.voices[voice].latched=self.voices[voice].cluster
+        params:set(voice.."latch_steps",json.encode(self.voices[voice].cluster))
       end
       -- reset cluster
       self.voices[voice].cluster={}
