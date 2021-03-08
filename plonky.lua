@@ -7,6 +7,7 @@
 --
 --    ▼ instructions below ▼
 --
+-- e1 changes voice
 -- k1+(k2 or k3) records pattern
 -- k2 or k3 plays pattern
 -- (e2 or e3) changes latch/arp
@@ -32,7 +33,7 @@ end
 
 
 function enc(k,d)
-  if k==1 then
+  if k==1 then 
     mg.voice_set=util.clamp(mg.voice_set+2*sign(d),0,4)
   elseif k>1 and params:get((k-1+mg.voice_set).."record")==0 then
     -- toggle arp/latch
@@ -88,6 +89,12 @@ function redraw()
   screen.move(65,1)
   screen.line(65,64)
   screen.stroke()
+  screen.level(0)
+  for i=0,1 do
+    screen.move(64+i,10)
+    screen.line(64+i,36)
+    screen.stroke()
+  end
   screen.level(15)
   for i=1,2 do
     screen.font_size(8)
@@ -114,9 +121,19 @@ function redraw()
       screen.text_center("arp")
     end
     -- show the voice number
+    screen.level(7)
+    if shift then
+      screen.level(15)
+    end
     screen.font_size(14)
-    screen.move(52+16*(i-1),28)
+    screen.move(52+16*(i-1),34)
     screen.text(i+mg.voice_set)
+    screen.move(63,22)
+    screen.text_center("voice")
+    screen.level(15)
+    if shift then 
+      screen.level(4)
+    end
     screen.move(28+72*(i-1),46)
     screen.font_size(48)
     if params:get(i+mg.voice_set.."record")==1 then

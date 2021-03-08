@@ -14,8 +14,6 @@ if util.file_exists(_path.code.."mx.samples") then
 end
 
 local Plonky={}
-local divisions={1,2,4,6,8,12,16,24,32}
-local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
 
 function Plonky:new(args)
   local m=setmetatable({},{__index=Plonky})
@@ -120,7 +118,9 @@ function Plonky:new(args)
     ppqn=64
   })
   m.timers={}
-  for _,division in ipairs(divisions) do
+  m.divisions={1,2,4,6,8,12,16,24,32}
+  m.division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
+  for _,division in ipairs(m.divisions) do
     m.timers[division]={}
     m.timers[division].lattice=m.lattice:new_pattern{
       action=function(t)
@@ -253,7 +253,7 @@ function Plonky:setup_params()
     end,action=function(v)
       self:build_scale()
     end}
-    params:add{type="option",id=i.."division",name="division",options=division_names,default=7}
+    params:add{type="option",id=i.."division",name="division",options=self.division_names,default=7}
     params:add{type="control",id=i.."legato",name="legato",controlspec=controlspec.new(1,99,'lin',1,50,'%')}
     params:add{type="binary",id=i.."arp",name="arp",behavior="toggle",default=0}
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
@@ -346,7 +346,7 @@ end
 function Plonky:emit_note(division,step)
   local update=false
   for i=1,self.num_voices do
-    if params:get(i.."play")==1 and divisions[params:get(i.."division")]==division then
+    if params:get(i.."play")==1 and self.divisions[params:get(i.."division")]==division then
       local num_steps=#self.voices[i].play_steps
       self.voices[i].play_step=self.voices[i].play_step+1
       if self.debug then
@@ -386,7 +386,7 @@ function Plonky:emit_note(division,step)
         update=true
       end
     end
-    if params:get(i.."arp")==1 and divisions[params:get(i.."division")]==division then
+    if params:get(i.."arp")==1 and self.divisions[params:get(i.."division")]==division then
       local keys={}
       local keys_len=0
       if params:get(i.."latch")==1 then
