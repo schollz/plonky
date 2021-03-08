@@ -203,7 +203,7 @@ function Plonky:setup_params()
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",21*2+2)
+  params:add_group("PLONKY",22*2+2)
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
     self.updateengine=4
   end}
@@ -240,6 +240,7 @@ function Plonky:setup_params()
       self:build_scale()
     end}
     params:add{type="option",id=i.."division",name="division",options=division_names,default=7}
+    params:add{type="control",id=i.."legato",name="legato",controlspec=controlspec.new(1,99,'lin',1,50,'%')}
     params:add{type="binary",id=i.."arp",name="arp",behavior="toggle",default=0}
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0}
     params:add{type="binary",id=i.."mute_non_arp",name="mute non-arp",behavior="toggle",default=0}
@@ -358,8 +359,7 @@ function Plonky:emit_note(division,step)
         end
         if rcs_next[1]~="-" and self.voices[i].play_last~=nil then
           clock.run(function()
-            -- TODO: add option to change 0.5 to some number between 0.1 and 0.9
-            clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
+            clock.sleep(clock.get_beat_sec()/(division/2)*params:get(i.."legato")/100)
             for _,rc in ipairs(self.voices[i].play_last) do
               self:press_note(rc[1],rc[2],false)
             end
@@ -390,7 +390,7 @@ function Plonky:emit_note(division,step)
         col=tonumber(col)
         self:press_note(row,col,true)
         clock.run(function()
-          clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
+          clock.sleep(clock.get_beat_sec()/(division/2)*params:get(i.."legato")/100)
           self:press_note(row,col,false)
         end)
         self.voices[i].arp_step=self.voices[i].arp_step+1
