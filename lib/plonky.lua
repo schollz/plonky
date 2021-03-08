@@ -658,8 +658,8 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
   end
 
   -- play on crow
-  if crow.connected() and voice < 5 then 
-	crow.output[voice].volts=util.clamp(note/12.0,0,10)
+  if crow.connected() and voice<5 then
+    crow.output[voice].volts=util.clamp(note/12.0,0,10)
   end
 end
 
