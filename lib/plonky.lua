@@ -1,4 +1,10 @@
-local json=include("plonky/lib/json") -- todo load faster library
+print(_VERSION)
+print(package.cpath)
+if not string.find(package.cpath,"/home/we/dust/code/plonky/lib/") then
+  package.cpath=package.cpath..";/home/we/dust/code/plonky/lib/?.so"
+end
+local json=require("cjson")
+-- local json=include("plonky/lib/json") -- todo load faster library
 local lattice=require("lattice")
 local MusicUtil=require "musicutil"
 
@@ -14,7 +20,7 @@ local division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
 function Plonky:new(args)
   local m=setmetatable({},{__index=Plonky})
   local args=args==nil and {} or args
-  m.debug=false -- args.debug TODO remove this
+  m.debug=true -- args.debug TODO remove this
   m.grid_on=args.grid_on==nil and true or args.grid_on
   m.toggleable=args.toggleable==nil and false or args.toggleable
 
@@ -331,6 +337,9 @@ function Plonky:emit_note(division,step)
     if params:get(i.."play")==1 and divisions[params:get(i.."division")]==division then
       local num_steps=#self.voices[i].play_steps
       self.voices[i].play_step=self.voices[i].play_step+1
+      if self.debug then 
+        print("playing step "..self.voices[i].play_step.."/"..num_steps)
+      end
       if self.voices[i].play_step>num_steps then
         self.voices[i].play_step=1
       end
