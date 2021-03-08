@@ -1,4 +1,4 @@
--- plonky v1.1.1
+-- plonky v1.1.2
 -- keyboard + sequencer
 --
 -- llllllll.co/t/plonky
