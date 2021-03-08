@@ -124,7 +124,6 @@ function Plonky:new(args)
       end,
     division=1/(division/2)}
   end
-  m.lattice:start()
 
 
   -- grid refreshing
@@ -141,7 +140,6 @@ function Plonky:new(args)
       m:grid_redraw()
     end
   end
-  m.grid_refresh:start()
 
   -- setup scale
   m.scale_names={}
@@ -151,6 +149,9 @@ function Plonky:new(args)
 
   m:setup_params()
   m:build_scale()
+  -- start up!
+  m.grid_refresh:start()
+  m.lattice:start()
   return m
 end
 
