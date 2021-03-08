@@ -358,6 +358,7 @@ function Plonky:emit_note(division,step)
         end
         if rcs_next[1]~="-" and self.voices[i].play_last~=nil then
           clock.run(function()
+		  -- TODO: add option to change 0.5 to some number between 0.1 and 0.9
             clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
             for _,rc in ipairs(self.voices[i].play_last) do
               self:press_note(rc[1],rc[2],false)
