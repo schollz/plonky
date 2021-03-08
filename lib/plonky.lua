@@ -645,6 +645,7 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
     end
   end
 
+  -- play on midi device
   if params:get(voice.."midi")>1 then
     if on then
       if self.debug then
@@ -654,6 +655,11 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
     else
       self.device[self.device_list[params:get(voice.."midi")]].midi:note_off(note,80)
     end
+  end
+
+  -- play on crow
+  if crow.connected() and voice < 5 then 
+	crow.output[voice].volts=util.clamp(note/12.0,0,10)
   end
 end
 

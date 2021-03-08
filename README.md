@@ -25,6 +25,7 @@ each 8x8 section of the grid is a voice. you can play notes in that voice by pre
 
 **patterns:** you can record patterns by pressing K1+K2 (for right voice press K1+K3). press a note (or multiple) and it will become a new step in the pattern. you can hold out a step by holding the notes and pressing K2 (for right voice press K3). you can add a rest by releasing notes and pressing K2 (for right voice press K3). when done recording press K1+K2 (for right voice press K3). to play a pattern press K2 (for right voice press K3).
 
+**crow:** each voice sends one note to crow at 1v/octave.
 
 ### Install
 
