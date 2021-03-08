@@ -25,7 +25,7 @@ function Plonky:new(args)
   m.device_list={"none"}
   for _,dev in pairs(midi.devices) do
     if dev.port~=nil then
-      local name = string.lower(dev.name)
+      local name=string.lower(dev.name)
       table.insert(m.device_list,name)
       print("adding "..name.." to port "..dev.port)
       m.device[name]={
@@ -34,7 +34,7 @@ function Plonky:new(args)
         midi=midi.connect(dev.port),
       }
     end
-  end  
+  end
 
   -- initiate mx samples
   if mxsamples~=nil then
@@ -358,7 +358,7 @@ function Plonky:emit_note(division,step)
         end
         if rcs_next[1]~="-" and self.voices[i].play_last~=nil then
           clock.run(function()
-		  -- TODO: add option to change 0.5 to some number between 0.1 and 0.9
+            -- TODO: add option to change 0.5 to some number between 0.1 and 0.9
             clock.sleep(clock.get_beat_sec()/(division/2)*0.5)
             for _,rc in ipairs(self.voices[i].play_last) do
               self:press_note(rc[1],rc[2],false)
@@ -595,7 +595,7 @@ function Plonky:press_note(row,col,on,is_finger)
 
   -- determine if muted
   print(is_finger)
-  if is_finger ~= nil and is_finger then
+  if is_finger~=nil and is_finger then
     if params:get(voice.."arp")==1 and params:get(voice.."mute_non_arp")==1 then
       do return end
     end
@@ -634,8 +634,8 @@ function Plonky:press_note(row,col,on,is_finger)
     end
   end
 
-  if params:get(voice.."midi")>1 then 
-    if on then 
+  if params:get(voice.."midi")>1 then
+    if on then
       if self.debug then
         print(note.." -> "..self.device_list[params:get(voice.."midi")])
       end
