@@ -216,7 +216,7 @@ function Plonky:setup_params()
     params:add{type="option",id=i.."midi",name="midi out",options=self.device_list,default=1}
     params:add{type="option",id=i.."engine_enabled",name="enable engine",options={"no","yes"},default=2}
     -- MxSamples parameters
-    params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=10}
+    params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=1}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
     params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,10,'lin',0,1.0,'amp')}
     params:add{type="control",id=i.."mx_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
