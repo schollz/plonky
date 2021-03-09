@@ -33,7 +33,7 @@ end
 
 function enc(k,d)
   if k==3 and mg.grid64 then do return end end
-  if k==1 then
+if k==1 then
     mg:update_voice_step(sign(d))
   elseif k>1 and params:get((k-1+mg.voice_set).."record")==0 then
     -- toggle arp/latch
@@ -64,7 +64,7 @@ end
 
 function key(k,z)
   if k==3 and mg.grid64 then do return end end
-  if k==1 then
+if k==1 then
     shift=z==1
   elseif shift and z==1 then
     params:delta((k-1+mg.voice_set).."record")
@@ -97,8 +97,8 @@ function redraw()
     screen.stroke()
   end
   screen.level(15)
-  local imax = 2
-  if mg.grid64 then 
+  local imax=2
+  if mg.grid64 then
     imax=1
   end
   for i=1,imax do

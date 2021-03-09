@@ -241,7 +241,7 @@ function Plonky:setup_params()
   end}
   params:add{type="number",id="voice",name="voice",min=1,max=self.num_voices,default=1,action=function(v)
     self:reload_params(v)
-    if not self.disable_menu_reload then 
+    if not self.disable_menu_reload then
       _menu.rebuild_params()
     end
   end}
@@ -575,7 +575,7 @@ function Plonky:key_press(row,col,on)
     voice=2+self.voice_set
   end
 
-  if params:get("voice")~=voice and _menu.mode then 
+  if params:get("voice")~=voice and _menu.mode then
     params:set("voice",voice)
   end
 
