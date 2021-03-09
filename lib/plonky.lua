@@ -127,7 +127,7 @@ function Plonky:new(args)
   })
   m.timers={}
   m.divisions={1,2,4,6,8,12,16,24,32}
-  m.division_names={"2 wn","wn","hn","hn-t","qn","qn-t","eighth","16-t","16"}
+  m.division_names={"2","1","1/2","1/2t","1/4","1/4t","1/8","1/8t","1/16"}
   for _,division in ipairs(m.divisions) do
     m.timers[division]={}
     m.timers[division].lattice=m.lattice:new_pattern{
@@ -220,7 +220,7 @@ function Plonky:setup_params()
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
   end
-  self.param_names={"scale","root","tuning","arp","latch","division","record","play","engine_enabled","midi","mute_non_arp","legato"}
+  self.param_names={"scale","root","tuning","arp","latch","division","play","engine_enabled","midi","mute_non_arp","legato"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
@@ -287,6 +287,7 @@ function Plonky:setup_params()
         params:set(i.."play_steps",json.encode(self.voices[i].record_steps))
       end
     end}
+    params:hide(i.."record")
     params:add{type="binary",id=i.."play",name="play",behavior="toggle",action=function(v)
       if v==1 then
         if params:get(i.."play_steps")~="[]" and params:get(i.."play_steps")~="" then

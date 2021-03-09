@@ -34,6 +34,7 @@ end
 
 
 function enc(k,d)
+  if k==3 and mg.grid64 then do return end end
   if k==1 then
     mg.voice_set=util.clamp(mg.voice_set+2*sign(d),0,4)
   elseif k>1 and params:get((k-1+mg.voice_set).."record")==0 then
@@ -64,6 +65,7 @@ function enc(k,d)
 end
 
 function key(k,z)
+  if k==3 and mg.grid64 then do return end end
   if k==1 then
     shift=z==1
   elseif shift and z==1 then
@@ -101,7 +103,7 @@ function redraw()
   if mg.grid64 then 
     imax=1
   end
-  for i=1,imac do
+  for i=1,imax do
     screen.font_size(8)
 
     if params:get(i.."record")==1 then
