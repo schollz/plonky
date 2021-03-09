@@ -34,7 +34,7 @@ end
 function enc(k,d)
   if k==3 and mg.grid64 then do return end end
   if k==1 then
-    mg.voice_set=util.clamp(mg.voice_set+2*sign(d),0,6)
+    mg:update_voice_step(sign(d))
   elseif k>1 and params:get((k-1+mg.voice_set).."record")==0 then
     -- toggle arp/latch
     d=sign(d)

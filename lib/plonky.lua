@@ -83,6 +83,7 @@ function Plonky:new(args)
   -- define num voices
   m.num_voices=8
   m.voice_set=0 -- the current voice set
+  m.disable_menu_reload=false
 
   -- keep track of pressed buttons
   m.pressed_buttons={} -- keep track of where fingers press
@@ -166,6 +167,15 @@ function Plonky:new(args)
   return m
 end
 
+function Plonky:update_voice_step(unity)
+  self.voice_set=util.clamp(self.voice_set+2*unity,0,self.num_voices-2)
+  if 1+self.voice_set~=params:get("voice") and 2+self.voice_set~=params:get("voice") then
+    self.disable_menu_reload=true
+    params:set("voice",self.voice_set+1)
+    self.disable_menu_reload=false
+  end
+end
+
 function Plonky:update_engine()
   local name=self.engine_options[params:get("mandoengine")]
   print("loading "..name)
@@ -231,7 +241,9 @@ function Plonky:setup_params()
   end}
   params:add{type="number",id="voice",name="voice",min=1,max=self.num_voices,default=1,action=function(v)
     self:reload_params(v)
-    _menu.rebuild_params()
+    if not self.disable_menu_reload then 
+      _menu.rebuild_params()
+    end
   end}
   for i=1,self.num_voices do
     -- midi out
