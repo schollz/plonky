@@ -169,11 +169,11 @@ end
 
 function Plonky:update_voice_step(unity)
   self.voice_set=util.clamp(self.voice_set+2*unity,0,self.num_voices-2)
-  if 1+self.voice_set~=params:get("voice") and 2+self.voice_set~=params:get("voice") then
-    self.disable_menu_reload=true
-    params:set("voice",self.voice_set+1)
-    self.disable_menu_reload=false
-  end
+  -- if 1+self.voice_set~=params:get("voice") and 2+self.voice_set~=params:get("voice") then
+  --   self.disable_menu_reload=true
+  --   params:set("voice",self.voice_set+1)
+  --   self.disable_menu_reload=false
+  -- end
 end
 
 function Plonky:update_engine()
@@ -575,10 +575,8 @@ function Plonky:key_press(row,col,on)
     voice=2+self.voice_set
   end
 
-  if params:get("voice")~=voice then 
-    self.disable_menu_reload=not _menu.mode
+  if params:get("voice")~=voice and _menu.mode then 
     params:set("voice",voice)
-    self.disable_menu_reload=false
   end
 
   -- add to note cluster
