@@ -252,11 +252,11 @@ function Plonky:setup_params()
     -- MxSamples parameters
     params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=1}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
-    params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,10,'lin',0,1.0,'amp')}
+    params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,10,'lin',0,0.5,'amp')}
     params:add{type="control",id=i.."mx_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
     params:add {type='control',id=i.."mx_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
     -- PolyPerc parameters
-    params:add{type="control",id=i.."pp_amp",name="amp",controlspec=controlspec.new(0,1,'lin',0,0.5,'')}
+    params:add{type="control",id=i.."pp_amp",name="amp",controlspec=controlspec.new(0,1,'lin',0,0.25,'')}
     params:add{type="control",id=i.."pp_pw",name="pw",controlspec=controlspec.new(0,100,'lin',0,50,'%')}
     params:add{type="control",id=i.."pp_release",name="release",controlspec=controlspec.new(0.1,3.2,'lin',0,1.2,'s')}
     params:add{type="control",id=i.."pp_cut",name="cutoff",controlspec=controlspec.new(50,5000,'exp',0,800,'hz')}
@@ -573,6 +573,12 @@ function Plonky:key_press(row,col,on)
   local voice=1+self.voice_set
   if col>8 then
     voice=2+self.voice_set
+  end
+
+  if params:get("voice")~=voice then 
+    self.disable_menu_reload=not _menu.mode
+    params:set("voice",voice)
+    self.disable_menu_reload=false
   end
 
   -- add to note cluster
