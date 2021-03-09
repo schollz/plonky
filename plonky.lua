@@ -12,6 +12,7 @@
 -- k2 or k3 plays pattern
 -- (e2 or e3) changes latch/arp
 
+-- TODO: grid64 support
 
 
 local plonky=include("plonky/lib/plonky")

@@ -24,6 +24,13 @@ function Plonky:new(args)
 
   m.scene="a"
 
+  m.crow=crow.connected()
+  m.jf=false -- change to "true" to get just friends
+  if m.jf then
+    crow.ii.pullup(true)
+    crow.ii.jf.mode(1)
+  end
+
   -- initiate midi connections
   m.device={}
   m.device_list={"none"}
@@ -128,7 +135,6 @@ function Plonky:new(args)
       end,
     division=1/(division/2)}
   end
-  m.lattice:start()
 
 
   -- grid refreshing
@@ -145,7 +151,6 @@ function Plonky:new(args)
       m:grid_redraw()
     end
   end
-  m.grid_refresh:start()
 
   -- setup scale
   m.scale_names={}
@@ -155,6 +160,9 @@ function Plonky:new(args)
 
   m:setup_params()
   m:build_scale()
+  -- start up!
+  m.grid_refresh:start()
+  m.lattice:start()
   return m
 end
 
@@ -658,8 +666,11 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
   end
 
   -- play on crow
-  if crow.connected() and voice<5 then
+  if self.crow and voice<5 then
     crow.output[voice].volts=util.clamp(note/12.0,0,10)
+    if self.jf and voice==1 then
+      crow.ii.jf.play_note(note)
+    end
   end
 end
 
