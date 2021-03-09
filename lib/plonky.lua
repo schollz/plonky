@@ -252,7 +252,7 @@ function Plonky:setup_params()
     -- MxSamples parameters
     params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=1}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
-    params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,10,'lin',0,0.5,'amp')}
+    params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,2,'lin',0.01,0.5,'amp',0.01/2)}
     params:add{type="control",id=i.."mx_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
     params:add {type='control',id=i.."mx_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
     -- PolyPerc parameters
