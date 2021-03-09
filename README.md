@@ -19,13 +19,13 @@ plonky is a keyboard and sequencer. i made it to be able to play [mx.samples](ht
 
 use the grid to play an engine. by default the engine is "PolyPerc", but if you install [mx.samples](https://llllllll.co/t/mx-samples/41400) you can also play that by switching "`PLONKY > engine"` via parameters.
 
-each 8x8 section of the grid is a voice. you can play notes in that voice by pressing pads. the notes correspond to a C-major scale, where each column is a fifth apart (all adjustable in menu). switch voices by using E3. by default there are 6 voices (only 3 available to 64-grids).
+**voices:** use E1 to change voices. each 8x8 section of the grid is a voice. you can play notes in that voice by pressing pads. the notes correspond to a C-major scale, where each column is a fifth apart. use the menu `PLONKY` to change parameters. while in a menu you can press a note to change to that voice.
 
 **arps:** you can do arps by turning E2 or E3 to the right. in "arp" mode you can press multiple keys and have them play. in "arp+latch" mode the last keys you pressed will play. change the speed using the "`PLONKY > division`" parameter in the menu.
 
-**patterns:** you can record patterns by pressing K1+K2 (for right voice press K1+K3). press a note (or multiple) and it will become a new step in the pattern. you can hold out a step by holding the notes and pressing K2 (for right voice press K3). you can add a rest by releasing notes and pressing K2 (for right voice press K3). when done recording press K1+K2 (for right voice press K3). to play a pattern press K2 (for right voice press K3).
+**patterns:** you can record patterns by pressing K1+K2 (for right voice press K1+K3). press a note (or multiple) and it will become a new step in the pattern. you can hold out a step by holding the notes and pressing K2 (for right voice press K3). you can add a rest by releasing notes and pressing K2 (for right voice press K3). erase steps with E2 (for right voice use E3). when done recording press K1+K2 (for right voice press K3). to play a pattern press K2 (for right voice press K3).
 
-**crow:** each voice sends one note to crow at 1v/octave.
+**crow + jf:** each voice sends one note to crow at 1v/octave. jf is available if you [change this line of code](https://github.com/schollz/plonky/blob/main/lib/plonky.lua#L28). these are untested so idk if they work.
 
 ### Install
 
