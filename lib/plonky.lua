@@ -59,6 +59,7 @@ function Plonky:new(args)
   -- initiate the grid
   m.g=grid.connect()
   m.grid64=m.g.cols==8
+  m.grid64=true
   m.grid64default=true
   m.grid_width=16
   m.g.key=function(x,y,z)

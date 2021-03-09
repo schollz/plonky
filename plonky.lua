@@ -97,7 +97,11 @@ function redraw()
     screen.stroke()
   end
   screen.level(15)
-  for i=1,2 do
+  local imax = 2
+  if mg.grid64 then 
+    imax=1
+  end
+  for i=1,imac do
     screen.font_size(8)
 
     if params:get(i.."record")==1 then
