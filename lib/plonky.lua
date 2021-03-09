@@ -18,7 +18,7 @@ local Plonky={}
 function Plonky:new(args)
   local m=setmetatable({},{__index=Plonky})
   local args=args==nil and {} or args
-  m.debug=true -- args.debug TODO remove this
+  m.debug=false -- args.debug TODO remove this
   m.grid_on=args.grid_on==nil and true or args.grid_on
   m.toggleable=args.toggleable==nil and false or args.toggleable
 
@@ -59,7 +59,6 @@ function Plonky:new(args)
   -- initiate the grid
   m.g=grid.connect()
   m.grid64=m.g.cols==8
-  m.grid64=true
   m.grid64default=true
   m.grid_width=16
   m.g.key=function(x,y,z)
@@ -82,7 +81,7 @@ function Plonky:new(args)
   end
 
   -- define num voices
-  m.num_voices=6
+  m.num_voices=8
   m.voice_set=0 -- the current voice set
 
   -- keep track of pressed buttons
@@ -388,7 +387,6 @@ function Plonky:emit_note(division,step)
             local row,col=key:match("(%d+),(%d+)")
             row=tonumber(row)
             col=tonumber(col)
-            print("playing",row,col)
             self:press_note(self.voices[i].voice_set,row,col,true)
             table.insert(self.voices[i].play_last,{row,col})
           end
