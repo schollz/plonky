@@ -34,13 +34,13 @@ function Plonky:new(args)
   -- initiate midi connections
   m.device={}
   m.device_list={"none"}
-  for _,dev in pairs(midi.devices) do
+  for i,dev in pairs(midi.devices) do
     if dev.port~=nil then
-      local name=string.lower(dev.name)
+      local name=string.lower(dev.name).." "..i
       table.insert(m.device_list,name)
       print("adding "..name.." to port "..dev.port)
       m.device[name]={
-        name=dev.name,
+        name=dev.name.." "..i,
         port=dev.port,
         midi=midi.connect(dev.port),
       }
