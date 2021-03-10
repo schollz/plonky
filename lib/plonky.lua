@@ -40,7 +40,7 @@ function Plonky:new(args)
       table.insert(m.device_list,name)
       print("adding "..name.." to port "..dev.port)
       m.device[name]={
-        name=dev.name.." "..i,
+        name=name,
         port=dev.port,
         midi=midi.connect(dev.port),
       }
