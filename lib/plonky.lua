@@ -24,16 +24,9 @@ function Plonky:new(args)
 
   m.scene="a"
 
-  m.crow=crow.connected()
-  m.jf=false -- change to "true" to get just friends
-  if m.jf then
-    crow.ii.pullup(true)
-    crow.ii.jf.mode(1)
-  end
-
   -- initiate midi connections
   m.device={}
-  m.device_list={"none"}
+  m.device_list={"disabled"}
   for i,dev in pairs(midi.devices) do
     if dev.port~=nil then
       local name=string.lower(dev.name).." "..i
@@ -248,7 +241,17 @@ function Plonky:setup_params()
   for i=1,self.num_voices do
     -- midi out
     params:add{type="option",id=i.."midi",name="midi out",options=self.device_list,default=1}
-    params:add{type="option",id=i.."engine_enabled",name="enable engine",options={"no","yes"},default=2}
+    params:add{type="option",id=i.."engine_enabled",name="engine",options={"disabled","enabled"},default=2}
+    params:add{type="option",id=i.."crow",name="crow/JF",options={"disabled","crow out 1+2","crow out 3+4","crow ii JF"},default=2,action=function(v)
+      if v==2 then
+        crow.output[2].action="{to(5,0),to(0,0.25)}"
+      elseif v==3 then
+        crow.output[4].action="{to(5,0),to(0,0.25)}"
+      elseif v==4 then
+        crow.ii.pullup(true)
+        crow.ii.jf.mode(1)
+      end
+    end}
     -- MxSamples parameters
     params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=1}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
@@ -682,10 +685,15 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
   end
 
   -- play on crow
-  if self.crow and voice<5 then
-    crow.output[voice].volts=util.clamp(note/12.0,0,10)
-    if self.jf and voice==1 then
-      crow.ii.jf.play_note(note)
+  if params:get(voice.."crow")>1 then
+    if params:get(voice.."crow")==2 then
+      crow.output[1].volts=(note-60)/12
+      crow.output[2].execute()
+    elseif params:get(voice.."crow")==3 then
+      crow.output[3].volts=(note-60)/12
+      crow.output[4].execute()
+    elseif params:get(voice.."crow")==4 then
+      crow.ii.jf.play_note((note-60)/12,5)
     end
   end
 end
