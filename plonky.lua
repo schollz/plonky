@@ -27,8 +27,19 @@ function init()
     redraw()
   end
   drawing:start()
+
+  inject_param_method_extensions(params,{
+    read=function(filename,name)
+      mg:reset_toggles()
+    end,
+  })
 end
 
+
+function cleanup()
+  uninject_param_method_extensions(params)
+  params:clear()
+end
 
 
 function enc(k,d)
@@ -151,6 +162,8 @@ function redraw()
   screen.update()
 end
 
+-- general utilities
+
 function rerun()
   norns.script.load(norns.state.script)
 end
@@ -165,4 +178,58 @@ function sign(x)
   end
 end
 
+
+-- from https://github.com/tlubke/shapes/blob/049b6ef68dd80c04e2181ef349afee2939784fe5/shapes.lua
+function clone_function(fn)
+  local dumped = string.dump(fn)
+  local cloned = load(dumped)
+  local i = 1
+  while true do
+    local name = debug.getupvalue(fn, i)
+    if not name then
+      break
+    end
+    debug.upvaluejoin(cloned, i, fn, i)
+    i = i + 1
+  end
+  return cloned
+end
+
+function inject_param_method_extensions(pset,fns)
+  -- extend paramset:write()
+  if pset.write2 == nil then
+    pset.write2 = clone_function(pset.write)
+    pset.write = function(paramset, filename, name)
+      pset:write2(filename, name)
+      if fns.write~=nil then
+        fns.write(filename,name)
+      end
+    end
+  end
+
+  -- extend paramset:read()
+  if pset.read2 == nil then
+    pset.read2 = clone_function(pset.read)
+    pset.read = function(paramset, filename) 
+      pset:read2(filename)
+      if fns.read ~= nil then 
+        fns.read(filename,name)
+      end
+    end
+  end
+end
+
+function uninject_param_method_extensions(pset)
+  -- reverse paramset:write() extension
+  if pset.write2 ~= nil then
+    pset.write  = clone_function(pset.write2)
+    pset.write2 = nil
+  end
+
+  -- reverse paramset:read() extension
+  if pset.read2 ~= nil then
+    pset.read   = clone_function(pset.read2)
+    pset.read2  = nil
+  end
+end
 

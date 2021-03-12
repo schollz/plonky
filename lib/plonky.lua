@@ -228,7 +228,7 @@ function Plonky:setup_params()
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",23*self.num_voices+2)
+  params:add_group("PLONKY",24*self.num_voices+2)
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
     self.updateengine=4
   end}
@@ -238,9 +238,11 @@ function Plonky:setup_params()
       _menu.rebuild_params()
     end
   end}
+  params:add_separator("outputs")
   for i=1,self.num_voices do
     -- midi out
     params:add{type="option",id=i.."midi",name="midi out",options=self.device_list,default=1}
+    params:add{type="number",id=i.."midichannel",name="midi ch",min=1,max=16,default=1}
     params:add{type="option",id=i.."engine_enabled",name="engine",options={"disabled","enabled"},default=2}
     params:add{type="option",id=i.."crow",name="crow/JF",options={"disabled","crow out 1+2","crow out 3+4","crow ii JF"},default=2,action=function(v)
       if v==2 then
@@ -252,6 +254,9 @@ function Plonky:setup_params()
         crow.ii.jf.mode(1)
       end
     end}
+  end
+  params:add_separator("engine parameters")
+  for i=1,self.num_voices do
     -- MxSamples parameters
     params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=1}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
@@ -263,6 +268,9 @@ function Plonky:setup_params()
     params:add{type="control",id=i.."pp_pw",name="pw",controlspec=controlspec.new(0,100,'lin',0,50,'%')}
     params:add{type="control",id=i.."pp_release",name="release",controlspec=controlspec.new(0.1,3.2,'lin',0,1.2,'s')}
     params:add{type="control",id=i.."pp_cut",name="cutoff",controlspec=controlspec.new(50,5000,'exp',0,800,'hz')}
+  end
+  params:add_separator("plonky")
+  for i=1,self.num_voices do
     params:add{type="option",id=i.."scale",name="scale",options=self.scale_names,default=1,action=function(v)
       self:build_scale()
     end}
@@ -331,6 +339,16 @@ function Plonky:setup_params()
 
   self:reload_params(1)
   self:update_engine()
+end
+
+function Plonky:reset_toggles()
+  for i=1,self.num_voices do
+    params:set(i.."play",0)
+    params:set(i.."mute_non_arp",0)
+    params:set(i.."record",0)
+    params:set(i.."arp",0)
+    params:set(i.."latch",0)
+  end
 end
 
 function Plonky:build_scale()
@@ -678,9 +696,9 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
       if self.debug then
         print(note.." -> "..self.device_list[params:get(voice.."midi")])
       end
-      self.device[self.device_list[params:get(voice.."midi")]].midi:note_on(note,80)
+      self.device[self.device_list[params:get(voice.."midi")]].midi:note_on(note,80,params:get(voice.."midichannel"))
     else
-      self.device[self.device_list[params:get(voice.."midi")]].midi:note_off(note,80)
+      self.device[self.device_list[params:get(voice.."midi")]].midi:note_off(note,80,params:get(voice.."midichannel"))
     end
   end
 
@@ -790,5 +808,7 @@ function Plonky:calculate_lfo(period_in_beats,offset)
     return math.sin(2*math.pi*clock.get_beats()/period_in_beats+offset)
   end
 end
+
+
 
 return Plonky
