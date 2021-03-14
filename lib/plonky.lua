@@ -735,7 +735,7 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
   end
 
   -- play on crow
-  if params:get(voice.."crow")>1 then
+  if params:get(voice.."crow")>1 and on then
     if params:get(voice.."crow")==2 then
       crow.output[1].volts=(note-60)/12
       crow.output[2].execute()
