@@ -252,7 +252,7 @@ function Plonky:setup_params()
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",24*self.num_voices+2)
+  params:add_group("PLONKY",24*self.num_voices+5)
   params:add{type="number",id="voice",name="voice",min=1,max=self.num_voices,default=1,action=function(v)
     self:reload_params(v)
     if not self.disable_menu_reload then
@@ -353,6 +353,11 @@ function Plonky:setup_params()
     params:add_text(i.."latch_steps",i.."latch_steps","[]")
     params:hide(i.."latch_steps")
   end
+  params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
+    self.updateengine=4
+  end}
+  params:add{type="option",id="midi_transport",name="midi transport",options=self.device_list,default=1}
+
   -- read in the last used engine as the default
   if util.file_exists(_path.data.."plonky/engine") then
     local f=io.open(_path.data.."plonky/engine","rb")
@@ -361,11 +366,6 @@ function Plonky:setup_params()
     print(content)
     params:set("mandoengine",tonumber(content))
   end
-  params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
-    self.updateengine=4
-  end}
-  params:add{type="option",id="midi_transport",name="midi transport",options=self.device_list,default=1}
-
 
   self:reload_params(1)
   self:update_engine()
