@@ -222,7 +222,7 @@ function Plonky:setup_params()
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
   end
-  self.param_names={"scale","root","tuning","arp","latch","division","play","engine_enabled","midi","mute_non_arp","legato"}
+  self.param_names={"scale","root","tuning","arp","latch","division","play","engine_enabled","midi","mute_non_arp","legato","crow","midichannel"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
@@ -241,10 +241,10 @@ function Plonky:setup_params()
   params:add_separator("outputs")
   for i=1,self.num_voices do
     -- midi out
+    params:add{type="option",id=i.."engine_enabled",name="engine",options={"disabled","enabled"},default=2}
     params:add{type="option",id=i.."midi",name="midi out",options=self.device_list,default=1}
     params:add{type="number",id=i.."midichannel",name="midi ch",min=1,max=16,default=1}
-    params:add{type="option",id=i.."engine_enabled",name="engine",options={"disabled","enabled"},default=2}
-    params:add{type="option",id=i.."crow",name="crow/JF",options={"disabled","crow out 1+2","crow out 3+4","crow ii JF"},default=2,action=function(v)
+    params:add{type="option",id=i.."crow",name="crow/JF",options={"disabled","crow out 1+2","crow out 3+4","crow ii JF"},default=1,action=function(v)
       if v==2 then
         crow.output[2].action="{to(5,0),to(0,0.25)}"
       elseif v==3 then
@@ -342,6 +342,7 @@ function Plonky:setup_params()
 end
 
 function Plonky:reset_toggles()
+  print("resetting toggles")
   for i=1,self.num_voices do
     params:set(i.."play",0)
     params:set(i.."mute_non_arp",0)
