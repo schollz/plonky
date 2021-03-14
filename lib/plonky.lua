@@ -6,7 +6,7 @@ end
 local json=require("cjson")
 -- local json=include("plonky/lib/json") -- todo load faster library
 -- local lattice=require("lattice")
-local lattice=include("plonky/lib/lattice") 
+local lattice=include("plonky/lib/lattice")
 local MusicUtil=require "musicutil"
 
 local mxsamples=nil
@@ -156,18 +156,18 @@ function Plonky:new(args)
         if name~=m.device_list[params:get("midi_transport")] then
           do return end
         end
-        local msg = midi.to_msg(data)
-        if msg.type == "clock" then do return end end
-        -- OP-1 fix for transport
-        if msg.type == 'start' or msg.type=='continue' then
+        local msg=midi.to_msg(data)
+        if msg.type=="clock" then do return end end
+-- OP-1 fix for transport
+        if msg.type=='start' or msg.type=='continue' then
           print(name.." starting clock")
           m.lattice:hard_restart()
-          for i=1,m.num_voices do 
+          for i=1,m.num_voices do
             params:set(i.."play",1)
           end
-        elseif msg.type=="stop" then 
+        elseif msg.type=="stop" then
           print(name.." stopping clock")
-          for i=1,m.num_voices do 
+          for i=1,m.num_voices do
             params:set(i.."play",0)
           end
         end
@@ -457,7 +457,7 @@ function Plonky:emit_note(division,step)
         end
         if rcs_next[1]~="-" and self.voices[i].play_last~=nil then
           clock.run(function()
-            local play_last = self.voices[i].play_last
+            local play_last=self.voices[i].play_last
             clock.sleep(clock.get_beat_sec()/(division/2)*params:get(i.."legato")/100)
             for _,rc in ipairs(play_last) do
               self:press_note(self.voices[i].voice_set,rc[1],rc[2],false)
