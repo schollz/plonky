@@ -5,7 +5,8 @@ if not string.find(package.cpath,"/home/we/dust/code/plonky/lib/") then
 end
 local json=require("cjson")
 -- local json=include("plonky/lib/json") -- todo load faster library
-local lattice=require("lattice")
+-- local lattice=require("lattice")
+local lattice=include("plonky/lib/lattice") 
 local MusicUtil=require "musicutil"
 
 local mxsamples=nil
@@ -24,21 +25,6 @@ function Plonky:new(args)
 
   m.scene="a"
 
-  -- initiate midi connections
-  m.device={}
-  m.device_list={"disabled"}
-  for i,dev in pairs(midi.devices) do
-    if dev.port~=nil then
-      local name=string.lower(dev.name).." "..i
-      table.insert(m.device_list,name)
-      print("adding "..name.." to port "..dev.port)
-      m.device[name]={
-        name=name,
-        port=dev.port,
-        midi=midi.connect(dev.port),
-      }
-    end
-  end
 
   -- initiate mx samples
   if mxsamples~=nil then
@@ -152,6 +138,44 @@ function Plonky:new(args)
     table.insert(m.scale_names,string.lower(MusicUtil.SCALES[i].name))
   end
 
+
+  -- initiate midi connections
+  m.device={}
+  m.device_list={"disabled"}
+  for i,dev in pairs(midi.devices) do
+    if dev.port~=nil then
+      local name=string.lower(dev.name).." "..i
+      table.insert(m.device_list,name)
+      print("adding "..name.." to port "..dev.port)
+      m.device[name]={
+        name=name,
+        port=dev.port,
+        midi=midi.connect(dev.port),
+      }
+      m.device[name].midi.event=function(data)
+        if name~=m.device_list[params:get("midi_transport")] then
+          do return end
+        end
+        local msg = midi.to_msg(data)
+        if msg.type == "clock" then do return end end
+        -- OP-1 fix for transport
+        if msg.type == 'start' or msg.type=='continue' then
+          print(name.." starting clock")
+          m.lattice:hard_restart()
+          for i=1,m.num_voices do 
+            params:set(i.."play",1)
+          end
+        elseif msg.type=="stop" then 
+          print(name.." stopping clock")
+          for i=1,m.num_voices do 
+            params:set(i.."play",0)
+          end
+        end
+      end
+    end
+  end
+
+
   m:setup_params()
   m:build_scale()
   -- start up!
@@ -222,16 +246,13 @@ function Plonky:setup_params()
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
   end
-  self.param_names={"scale","root","tuning","arp","latch","division","play","engine_enabled","midi","mute_non_arp","legato","crow","midichannel"}
+  self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
   params:add_group("PLONKY",24*self.num_voices+2)
-  params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
-    self.updateengine=4
-  end}
   params:add{type="number",id="voice",name="voice",min=1,max=self.num_voices,default=1,action=function(v)
     self:reload_params(v)
     if not self.disable_menu_reload then
@@ -287,6 +308,7 @@ function Plonky:setup_params()
     params:add{type="option",id=i.."division",name="division",options=self.division_names,default=7}
     params:add{type="control",id=i.."legato",name="legato",controlspec=controlspec.new(1,99,'lin',1,50,'%')}
     params:add{type="binary",id=i.."arp",name="arp",behavior="toggle",default=0}
+    params:hide(i.."arp")
     params:add{type="binary",id=i.."latch",name="latch",behavior="toggle",default=0,action=function(v)
       if v==1 then
         -- load latched steps
@@ -295,7 +317,9 @@ function Plonky:setup_params()
         end
       end
     end}
+    params:hide(i.."latch")
     params:add{type="binary",id=i.."mute_non_arp",name="mute non-arp",behavior="toggle",default=0}
+    params:hide(i.."mute_non_arp")
     params:add{type="binary",id=i.."record",name="record pattern",behavior="toggle",default=0,action=function(v)
       if v==1 then
         self.voices[i].record_step=0
@@ -323,6 +347,7 @@ function Plonky:setup_params()
         print("stopping "..i)
       end
     end}
+    params:hide(i.."play")
     params:add_text(i.."play_steps",i.."play_steps","")
     params:hide(i.."play_steps")
     params:add_text(i.."latch_steps",i.."latch_steps","[]")
@@ -336,6 +361,11 @@ function Plonky:setup_params()
     print(content)
     params:set("mandoengine",tonumber(content))
   end
+  params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
+    self.updateengine=4
+  end}
+  params:add{type="option",id="midi_transport",name="midi transport",options=self.device_list,default=1}
+
 
   self:reload_params(1)
   self:update_engine()
@@ -427,8 +457,9 @@ function Plonky:emit_note(division,step)
         end
         if rcs_next[1]~="-" and self.voices[i].play_last~=nil then
           clock.run(function()
+            local play_last = self.voices[i].play_last
             clock.sleep(clock.get_beat_sec()/(division/2)*params:get(i.."legato")/100)
-            for _,rc in ipairs(self.voices[i].play_last) do
+            for _,rc in ipairs(play_last) do
               self:press_note(self.voices[i].voice_set,rc[1],rc[2],false)
             end
             self.voices[i].play_last=nil
@@ -809,7 +840,6 @@ function Plonky:calculate_lfo(period_in_beats,offset)
     return math.sin(2*math.pi*clock.get_beats()/period_in_beats+offset)
   end
 end
-
 
 
 return Plonky
