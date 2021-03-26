@@ -364,7 +364,10 @@ function Plonky:setup_params()
     local content=f:read("*all")
     f:close()
     print(content)
-    params:set("mandoengine",tonumber(content))
+    local last_engine = tonumber(content)
+    if last_engine ~= nil then
+    	params:set("mandoengine",last_engine)
+    end
   end
 
   self:reload_params(1)
