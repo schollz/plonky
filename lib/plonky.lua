@@ -36,6 +36,10 @@ function Plonky:new(args)
   end
 
   -- initiate the grid
+  -- if you are using midigrid then first install in maiden with
+  -- ;install https://github.com/jaggednz/midigrid
+  -- and then comment out the following line:
+  -- local grid = include("midigrid/lib/midigrid")
   m.g=grid.connect()
   m.grid64=m.g.cols==8
   m.grid64default=true

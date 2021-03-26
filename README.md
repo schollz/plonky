@@ -27,6 +27,8 @@ use the grid to play an engine. by default the engine is "PolyPerc", but if you 
 
 **crow + jf:** each voice sends one note to crow at 1v/octave. jf is available if you [change this line of code](https://github.com/schollz/plonky/blob/main/lib/plonky.lua#L28). these are untested so idk if they work.
 
+**midigrid:** check the instructions in the code in the `plonky/lib/plonky.lua` file, search for "midigrid".
+
 ### Install
 
 https://github.com/schollz/plonky
