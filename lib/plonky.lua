@@ -252,7 +252,7 @@ function Plonky:setup_params()
   end
   self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel"}
   self.engine_params={}
-  self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release"}
+  self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
@@ -287,6 +287,7 @@ function Plonky:setup_params()
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
     params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,2,'lin',0.01,0.5,'amp',0.01/2)}
     params:add{type="control",id=i.."mx_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
+    params:add {type='control',id=i.."mx_attack",name="attack",controlspec=controlspec.new(0,10,'lin',0,0,'s')}
     params:add {type='control',id=i.."mx_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
     -- PolyPerc parameters
     params:add{type="control",id=i.."pp_amp",name="amp",controlspec=controlspec.new(0,1,'lin',0,0.25,'')}
@@ -712,6 +713,7 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
           midi=note,
           velocity=params:get(voice.."mx_velocity"),
           amp=params:get(voice.."mx_amp"),
+          attack=params:get(voice.."mx_attack"),
           release=params:get(voice.."mx_release"),
           pan=params:get(voice.."mx_pan"),
         })
