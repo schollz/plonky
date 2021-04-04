@@ -150,7 +150,7 @@ function Plonky:new(args)
   m.device_list={"disabled"}
   for i,dev in pairs(midi.devices) do
     if dev.port~=nil then
-      local name=string.lower(dev.name).." "..i
+      local name=string.lower(dev.name)
       table.insert(m.device_list,name)
       print("plonky midi: adding "..name.." to port "..dev.port)
       m.device[name]={
