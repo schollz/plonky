@@ -19,7 +19,7 @@ local Plonky={}
 function Plonky:new(args)
   local m=setmetatable({},{__index=Plonky})
   local args=args==nil and {} or args
-  m.debug=true -- args.debug TODO remove this
+  m.debug=false -- args.debug TODO remove this
   m.grid_on=args.grid_on==nil and true or args.grid_on
   m.toggleable=args.toggleable==nil and false or args.toggleable
 
@@ -88,6 +88,8 @@ function Plonky:new(args)
       cluster={},
       pressed={},
       latched={},
+      scale={},
+      note_to_pos={},
       arp_last="",
       arp_step=1,
       record_steps={},
@@ -284,7 +286,7 @@ function Plonky:setup_params()
   end
   params:add_separator("inputs")
   for i=1,self.num_voices do
-    params:add{type="option",id=i.."midi in",name="midi in",options=self.device_list,default=i==1 and 2 or 1} -- TODO change this to 1
+    params:add{type="option",id=i.."midi in",name="midi in",options=self.device_list,default=1}--i==1 and 2 or 1} -- TODO change this to 1
     params:add{type="number",id=i.."midichannelin",name="midi in ch",min=1,max=16,default=1}
   end
   params:add_separator("engine parameters")
@@ -400,6 +402,23 @@ end
 function Plonky:build_scale()
   for i=1,self.num_voices do
     self.voices[i].scale=MusicUtil.generate_scale_of_length(params:get(i.."root"),self.scale_names[params:get(i.."scale")],168)
+    self.voices[i].note_to_pos={}
+    -- determine the transformation between midi notes and grid
+    for j=1,8 do
+      for k=1,8 do
+        local k_=k
+        if i%2==0 then
+          k_=k_+8
+        end
+        local note = self:get_note_from_pos(i,j,k_)
+        if note ~=nil then
+          if self.voices[i].note_to_pos[note]==nil then
+            self.voices[i].note_to_pos[note]={}
+          end
+          table.insert(self.voices[i].note_to_pos[note],{j,k_})
+        end        
+      end
+    end
   end
   print("scale start: "..self.voices[1].scale[1])
   print("scale start: "..self.voices[2].scale[1])
@@ -681,6 +700,25 @@ function Plonky:key_press(row,col,on)
   self:press_note(self.voice_set,row,col,on,true)
 end
 
+function Plonky:press_midi_note(name,channel,note,velocity,on)
+  if self.debug then 
+    print("midi_note",name,channel,note,velocity,on)
+  end
+  -- WORK
+  for i=1,self.num_voices do 
+    if i==self.voice_set+1 or i==self.voice_set+2 then
+      if self.debug then
+        print(i,name,self.device_list[params:get(i.."midi in")])
+      end
+      if name==self.device_list[params:get(i.."midi in")] and channel==params:get(i.."midichannelin") then
+        local positions = self.voices[i].note_to_pos[note]
+        if positions ~= nil then 
+          self:key_press(positions[1][1],positions[1][2],on)
+        end      
+      end
+    end
+  end
+end
 
 function Plonky:press_note(voice_set,row,col,on,is_finger)
   if on then
@@ -701,22 +739,6 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
     print("voice "..voice.." press note "..MusicUtil.note_num_to_name(note,true))
   end
 
-  self:play_note(voice,note,on,is_finger)
-end
-
-function Plonky:press_midi_note(name,channel,note,velocity,on)
-  if self.debug then 
-    print("midi_note",name,channel,note,velocity,on)
-  end
-  -- WORK
-  for i=1,self.num_voices do 
-    if name==self.device_list[params:get(i.."midi in")] and channel==params:get(i.."midichannelin") then
-      self:play_note(i,note,on,true,velocity)
-    end
-  end
-end
-
-function Plonky:play_note(voice,note,on,is_finger,velocity)
   -- determine if muted
   if is_finger~=nil and is_finger then
     if params:get(voice.."arp")==1 and params:get(voice.."mute_non_arp")==1 then
