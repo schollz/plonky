@@ -162,8 +162,8 @@ function Plonky:new(args)
       }
       m.device[name].midi.event=function(data)
         local msg=midi.to_msg(data)
-        if msg.type=="clock" then 
-          do return end 
+        if msg.type=="clock" then
+          do return end
         end
         -- tab.print(msg)
         -- OP-1 fix for transport
@@ -391,9 +391,9 @@ function Plonky:setup_params()
     local content=f:read("*all")
     f:close()
     print(content)
-    local last_engine = tonumber(content)
-    if last_engine ~= nil then
-    	params:set("mandoengine",last_engine)
+    local last_engine=tonumber(content)
+    if last_engine~=nil then
+      params:set("mandoengine",last_engine)
     end
   end
 
@@ -423,13 +423,13 @@ function Plonky:build_scale()
         if i%2==0 then
           k_=k_+8
         end
-        local note = self:get_note_from_pos(i,j,k_)
-        if note ~=nil then
+        local note=self:get_note_from_pos(i,j,k_)
+        if note~=nil then
           if self.voices[i].note_to_pos[note]==nil then
             self.voices[i].note_to_pos[note]={}
           end
           table.insert(self.voices[i].note_to_pos[note],{j,k_})
-        end        
+        end
       end
     end
   end
@@ -714,20 +714,20 @@ function Plonky:key_press(row,col,on)
 end
 
 function Plonky:press_midi_note(name,channel,note,velocity,on)
-  if self.debug then 
+  if self.debug then
     print("midi_note",name,channel,note,velocity,on)
   end
   -- WORK
-  for i=1,self.num_voices do 
+  for i=1,self.num_voices do
     if i==self.voice_set+1 or i==self.voice_set+2 then
       if self.debug then
         print(i,name,self.device_list[params:get(i.."midi in")])
       end
       if name==self.device_list[params:get(i.."midi in")] and channel==params:get(i.."midichannelin") then
-        local positions = self.voices[i].note_to_pos[note]
-        if positions ~= nil then 
+        local positions=self.voices[i].note_to_pos[note]
+        if positions~=nil then
           self:key_press(positions[1][1],positions[1][2],on)
-        end      
+        end
       end
     end
   end
@@ -778,7 +778,7 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
       else
         self.mx:off({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note})
       end
-    elseif engine.name=="MxSamplesAmen" then 
+    elseif engine.name=="MxSamplesAmen" then
       if on then
         self.mx:on({
           name=self.instrument_list[params:get(voice.."mxa_instrument")],

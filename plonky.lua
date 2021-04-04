@@ -91,10 +91,10 @@ if k==1 then
     mg:record_add_rest_or_legato(k-1+mg.voice_set)
   elseif z==1 then -- stop/start
     -- hard restart
-    local do_reset = true
-    for i=1,mg.num_voices do 
-      if params:get(i.."play")==1 then 
-        do_reset = false
+    local do_reset=true
+    for i=1,mg.num_voices do
+      if params:get(i.."play")==1 then
+        do_reset=false
       end
     end
     if do_reset then
@@ -110,9 +110,9 @@ if k==1 then
     -- restart lattice if nothing else is playing
 
     local do_stop_amen=true
-    for i=1,mg.num_voices do 
-      if params:get(i.."play")==1 then 
-        do_stop_amen = false
+    for i=1,mg.num_voices do
+      if params:get(i.."play")==1 then
+        do_stop_amen=false
       end
     end
     if do_stop_amen then
