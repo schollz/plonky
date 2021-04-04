@@ -17,6 +17,13 @@ local plonky=include("plonky/lib/plonky")
 local shift=false
 local arplatch=0
 
+-- TODO: make sure amen exists
+local amen=nil
+if util.file_exists(_path.code.."amen") then
+  amen=include("amen/lib/amen")
+  amen:new()
+end
+
 function init()
   mg=plonky:new({grid_on=true,toggleable=true})
 
@@ -83,8 +90,34 @@ if k==1 then
   elseif params:get((k-1+mg.voice_set).."record")==1 and z==1 then
     mg:record_add_rest_or_legato(k-1+mg.voice_set)
   elseif z==1 then -- stop/start
+    -- hard restart
+    local do_reset = true
+    for i=1,mg.num_voices do 
+      if params:get(i.."play")==1 then 
+        do_reset = false
+      end
+    end
+    if do_reset then
+      mg.lattice:hard_restart()
+      if params:get("1amen_file")~="" then
+        params:set("1amen_play",0)
+        params:set("1amen_play",1)
+      end
+    end
+
     params:delta((k-1+mg.voice_set).."play")
     params:set((k-1+mg.voice_set).."record",0)
+    -- restart lattice if nothing else is playing
+
+    local do_stop_amen=true
+    for i=1,mg.num_voices do 
+      if params:get(i.."play")==1 then 
+        do_stop_amen = false
+      end
+    end
+    if do_stop_amen then
+      params:set("1amen_play",0)
+    end
   end
 end
 

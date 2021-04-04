@@ -14,6 +14,8 @@ if util.file_exists(_path.code.."mx.samples") then
   mxsamples=include("mx.samples/lib/mx.samples")
 end
 
+
+
 local Plonky={}
 
 function Plonky:new(args)
@@ -254,13 +256,16 @@ function Plonky:setup_params()
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
   end
+  -- TODO make sure amen exists
+  table.insert(self.engine_options,"MxSamplesAmen")
   self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel","midi in","midichannelin"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
+  self.engine_params["MxSamplesAmen"]={"mxa_instrument","mxa_velocity","mxa_amp","mxa_pan","mxa_release","mxa_attack"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",27*self.num_voices+5)
+  params:add_group("PLONKY",33*self.num_voices+5)
   params:add{type="number",id="voice",name="voice",min=1,max=self.num_voices,default=1,action=function(v)
     self:reload_params(v)
     if not self.disable_menu_reload then
@@ -298,6 +303,14 @@ function Plonky:setup_params()
     params:add{type="control",id=i.."mx_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
     params:add {type='control',id=i.."mx_attack",name="attack",controlspec=controlspec.new(0,10,'lin',0,0,'s')}
     params:add {type='control',id=i.."mx_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
+
+    params:add{type="option",id=i.."mxa_instrument",name="instrument",options=self.instrument_list,default=1}
+    params:add{type="number",id=i.."mxa_velocity",name="velocity",min=0,max=127,default=80}
+    params:add {type='control',id=i.."mxa_amp",name="amp",controlspec=controlspec.new(0,2,'lin',0.01,0.5,'amp',0.01/2)}
+    params:add{type="control",id=i.."mxa_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
+    params:add {type='control',id=i.."mxa_attack",name="attack",controlspec=controlspec.new(0,10,'lin',0,0,'s')}
+    params:add {type='control',id=i.."mxa_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
+
     -- PolyPerc parameters
     params:add{type="control",id=i.."pp_amp",name="amp",controlspec=controlspec.new(0,1,'lin',0,0.25,'')}
     params:add{type="control",id=i.."pp_pw",name="pw",controlspec=controlspec.new(0,100,'lin',0,50,'%')}
@@ -764,6 +777,20 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
         })
       else
         self.mx:off({name=self.instrument_list[params:get(voice.."mx_instrument")],midi=note})
+      end
+    elseif engine.name=="MxSamplesAmen" then 
+      if on then
+        self.mx:on({
+          name=self.instrument_list[params:get(voice.."mxa_instrument")],
+          midi=note,
+          velocity=velocity or params:get(voice.."mxa_velocity"),
+          amp=params:get(voice.."mxa_amp"),
+          attack=params:get(voice.."mxa_attack"),
+          release=params:get(voice.."mxa_release"),
+          pan=params:get(voice.."mxa_pan"),
+        })
+      else
+        self.mx:off({name=self.instrument_list[params:get(voice.."mxa_instrument")],midi=note})
       end
     elseif engine.name=="PolyPerc" then
       if on then
