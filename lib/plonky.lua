@@ -88,6 +88,8 @@ function Plonky:new(args)
       cluster={},
       pressed={},
       latched={},
+      scale={},
+      note_to_pos={},
       arp_last="",
       arp_step=1,
       record_steps={},
@@ -150,30 +152,32 @@ function Plonky:new(args)
     if dev.port~=nil then
       local name=string.lower(dev.name).." "..i
       table.insert(m.device_list,name)
-      print("adding "..name.." to port "..dev.port)
+      print("plonky midi: adding "..name.." to port "..dev.port)
       m.device[name]={
         name=name,
         port=dev.port,
         midi=midi.connect(dev.port),
       }
       m.device[name].midi.event=function(data)
-        if name~=m.device_list[params:get("midi_transport")] then
-          do return end
-        end
         local msg=midi.to_msg(data)
-        if msg.type=="clock" then do return end end
--- OP-1 fix for transport
-        if msg.type=='start' or msg.type=='continue' then
+        if msg.type=="clock" then 
+          do return end 
+        end
+        -- tab.print(msg)
+        -- OP-1 fix for transport
+        if msg.type=='start' or msg.type=='continue' and name==m.device_list[params:get("midi_transport")] then
           print(name.." starting clock")
           m.lattice:hard_restart()
           for i=1,m.num_voices do
             params:set(i.."play",1)
           end
-        elseif msg.type=="stop" then
+        elseif msg.type=="stop" and name==m.device_list[params:get("midi_transport")] then
           print(name.." stopping clock")
           for i=1,m.num_voices do
             params:set(i.."play",0)
           end
+        elseif msg.type=="note_on" or msg.type=="note_off" then
+          m:press_midi_note(name,msg.ch,msg.note,msg.vel,msg.type=="note_on")
         end
       end
     end
@@ -250,13 +254,13 @@ function Plonky:setup_params()
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
   end
-  self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel"}
+  self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel","midi in","midichannelin"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
-  params:add_group("PLONKY",24*self.num_voices+5)
+  params:add_group("PLONKY",27*self.num_voices+5)
   params:add{type="number",id="voice",name="voice",min=1,max=self.num_voices,default=1,action=function(v)
     self:reload_params(v)
     if not self.disable_menu_reload then
@@ -268,7 +272,7 @@ function Plonky:setup_params()
     -- midi out
     params:add{type="option",id=i.."engine_enabled",name="engine",options={"disabled","enabled"},default=2}
     params:add{type="option",id=i.."midi",name="midi out",options=self.device_list,default=1}
-    params:add{type="number",id=i.."midichannel",name="midi ch",min=1,max=16,default=1}
+    params:add{type="number",id=i.."midichannel",name="midi out ch",min=1,max=16,default=1}
     params:add{type="option",id=i.."crow",name="crow/JF",options={"disabled","crow out 1+2","crow out 3+4","crow ii JF"},default=1,action=function(v)
       if v==2 then
         crow.output[2].action="{to(5,0),to(0,0.25)}"
@@ -279,6 +283,11 @@ function Plonky:setup_params()
         crow.ii.jf.mode(1)
       end
     end}
+  end
+  params:add_separator("inputs")
+  for i=1,self.num_voices do
+    params:add{type="option",id=i.."midi in",name="midi in",options=self.device_list,default=1}--i==1 and 2 or 1} -- TODO change this to 1
+    params:add{type="number",id=i.."midichannelin",name="midi in ch",min=1,max=16,default=1}
   end
   params:add_separator("engine parameters")
   for i=1,self.num_voices do
@@ -393,6 +402,23 @@ end
 function Plonky:build_scale()
   for i=1,self.num_voices do
     self.voices[i].scale=MusicUtil.generate_scale_of_length(params:get(i.."root"),self.scale_names[params:get(i.."scale")],168)
+    self.voices[i].note_to_pos={}
+    -- determine the transformation between midi notes and grid
+    for j=1,8 do
+      for k=1,8 do
+        local k_=k
+        if i%2==0 then
+          k_=k_+8
+        end
+        local note = self:get_note_from_pos(i,j,k_)
+        if note ~=nil then
+          if self.voices[i].note_to_pos[note]==nil then
+            self.voices[i].note_to_pos[note]={}
+          end
+          table.insert(self.voices[i].note_to_pos[note],{j,k_})
+        end        
+      end
+    end
   end
   print("scale start: "..self.voices[1].scale[1])
   print("scale start: "..self.voices[2].scale[1])
@@ -674,6 +700,25 @@ function Plonky:key_press(row,col,on)
   self:press_note(self.voice_set,row,col,on,true)
 end
 
+function Plonky:press_midi_note(name,channel,note,velocity,on)
+  if self.debug then 
+    print("midi_note",name,channel,note,velocity,on)
+  end
+  -- WORK
+  for i=1,self.num_voices do 
+    if i==self.voice_set+1 or i==self.voice_set+2 then
+      if self.debug then
+        print(i,name,self.device_list[params:get(i.."midi in")])
+      end
+      if name==self.device_list[params:get(i.."midi in")] and channel==params:get(i.."midichannelin") then
+        local positions = self.voices[i].note_to_pos[note]
+        if positions ~= nil then 
+          self:key_press(positions[1][1],positions[1][2],on)
+        end      
+      end
+    end
+  end
+end
 
 function Plonky:press_note(voice_set,row,col,on,is_finger)
   if on then
@@ -688,17 +733,17 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
     voice=2+voice_set
   end
 
+  -- determine note
+  local note=self:get_note_from_pos(voice,row,col)
+  if self.debug then
+    print("voice "..voice.." press note "..MusicUtil.note_num_to_name(note,true))
+  end
+
   -- determine if muted
   if is_finger~=nil and is_finger then
     if params:get(voice.."arp")==1 and params:get(voice.."mute_non_arp")==1 then
       do return end
     end
-  end
-
-  -- determine note
-  local note=self:get_note_from_pos(voice,row,col)
-  if self.debug then
-    print("voice "..voice.." press note "..MusicUtil.note_num_to_name(note,true))
   end
 
   -- play from engine
@@ -711,7 +756,7 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
         self.mx:on({
           name=self.instrument_list[params:get(voice.."mx_instrument")],
           midi=note,
-          velocity=params:get(voice.."mx_velocity"),
+          velocity=velocity or params:get(voice.."mx_velocity"),
           amp=params:get(voice.."mx_amp"),
           attack=params:get(voice.."mx_attack"),
           release=params:get(voice.."mx_release"),
@@ -737,9 +782,9 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
       if self.debug then
         print(note.." -> "..self.device_list[params:get(voice.."midi")])
       end
-      self.device[self.device_list[params:get(voice.."midi")]].midi:note_on(note,80,params:get(voice.."midichannel"))
+      self.device[self.device_list[params:get(voice.."midi")]].midi:note_on(note,velocity or 80,params:get(voice.."midichannel"))
     else
-      self.device[self.device_list[params:get(voice.."midi")]].midi:note_off(note,80,params:get(voice.."midichannel"))
+      self.device[self.device_list[params:get(voice.."midi")]].midi:note_off(note,velocity or 80,params:get(voice.."midichannel"))
     end
   end
 
