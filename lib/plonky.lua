@@ -30,11 +30,11 @@ function Plonky:new(args)
 
   -- initiate mx samples
   if mxsamples~=nil then
-    self.mx=mxsamples:new()
-    self.instrument_list=self.mx:list_instruments()
+    m.mx=mxsamples:new()
+    m.instrument_list=m.mx:list_instruments()
   else
-    self.mx=nil
-    self.instrument_list={}
+    m.mx=nil
+    m.instrument_list={}
   end
 
   -- initiate the grid
@@ -214,6 +214,11 @@ function Plonky:update_engine()
     f=io.open(_path.data.."plonky/engine","w")
     f:write(params:get("mandoengine"))
     f:close()
+    -- if you ever want to reduce number of voices
+    -- if engine.name=="MxSamples" then
+    --   print("setting max voices")
+    --   self.mx:max_voices(40)
+    -- end
   end)
   engine.name=name
   self:reload_params(params:get("voice"))
