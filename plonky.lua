@@ -17,15 +17,13 @@ local plonky=include("plonky/lib/plonky")
 local shift=false
 local arplatch=0
 
--- TODO: make sure amen exists
-local amen=nil
-if util.file_exists(_path.code.."amen") then
-  amen=include("amen/lib/amen")
-  amen:new()
-end
-
 function init()
   mg=plonky:new({grid_on=true,toggleable=true})
+  local amen=nil
+  if util.file_exists(_path.code.."amen") then
+    amen=include("amen/lib/amen")
+    amen:new({lattice=mg.lattice})
+  end
 
   drawing=metro.init()
   drawing.time=0.1
@@ -99,25 +97,11 @@ if k==1 then
     end
     if do_reset then
       mg.lattice:hard_restart()
-      if params:get("1amen_file")~="" then
-        params:set("1amen_play",0)
-        params:set("1amen_play",1)
-      end
     end
 
     params:delta((k-1+mg.voice_set).."play")
     params:set((k-1+mg.voice_set).."record",0)
     -- restart lattice if nothing else is playing
-
-    local do_stop_amen=true
-    for i=1,mg.num_voices do
-      if params:get(i.."play")==1 then
-        do_stop_amen=false
-      end
-    end
-    if do_stop_amen then
-      params:set("1amen_play",0)
-    end
   end
 end
 
