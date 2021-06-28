@@ -201,8 +201,10 @@ function Plonky:update_voice_step(unity)
   -- end
 end
 
-function Plonky:update_engine()
-  local name=self.engine_options[params:get("mandoengine")]
+function Plonky:update_engine(name)
+  if name==nil then
+	  name=self.engine_options[params:get("mandoengine")]
+  end
   print("loading "..name)
   self.engine_loaded=false
   engine.load(name,function()
