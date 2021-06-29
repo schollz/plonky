@@ -235,7 +235,7 @@ function Plonky:reload_params(v)
     end
   end
   for eng,param_list in pairs(self.engine_params) do
-    if engine.name==eng then
+    if string.sub(engine.name,1,2)==string.sub(eng,1,2) then
       for _,param_name in ipairs(param_list) do
         for i=1,self.num_voices do
           if i==v then
@@ -260,10 +260,12 @@ function Plonky:setup_params()
   self.engine_options={"PolyPerc"}
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
+    table.insert(self.engine_options,"MxVoyage")
   end
   self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel","midi in","midichannelin"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
+  self.engine_params["MxVoyage"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
 
 
@@ -758,7 +760,7 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
     do return end
   end
   if params:get(voice.."engine_enabled")==2 then
-    if engine.name=="MxSamples" then
+    if string.sub(engine.name,1,2)=="Mx" then
       if on then
         self.mx:on({
           name=self.instrument_list[params:get(voice.."mx_instrument")],
