@@ -260,13 +260,13 @@ function Plonky:setup_params()
   self.engine_options={"PolyPerc"}
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
-    table.insert(self.engine_options,"MxVoyage")
+    -- table.insert(self.engine_options,"MxVoyage")
   end
   self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel","midi in","midichannelin"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
-  self.engine_params["MxVoyage"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
+  -- self.engine_params["MxVoyage"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
 
 
   params:add_group("PLONKY",27*self.num_voices+5)
