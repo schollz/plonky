@@ -1,4 +1,4 @@
--- plonky v1.4.0
+-- plonky v1.5.0
 -- keyboard + sequencer
 --
 -- llllllll.co/t/plonky
@@ -232,4 +232,3 @@ function uninject_param_method_extensions(pset)
     pset.read2=nil
   end
 end
-
