@@ -8,11 +8,87 @@ local json=require("cjson")
 -- local lattice=require("lattice")
 local lattice=include("plonky/lib/lattice")
 local MusicUtil=require "musicutil"
+local Formatters=require "formatters"
+
+-- mx.samples Config
 
 local mxsamples=nil
 if util.file_exists(_path.code.."mx.samples") then
   mxsamples=include("mx.samples/lib/mx.samples")
 end
+
+-- Thebangs' Config
+
+if util.file_exists(_path.code.."thebangs") then
+  thebangs_exists=true
+end
+
+local Thebangs={}
+Thebangs.options={}
+Thebangs.options.algoNames={
+   "square","square_mod1","square_mod2",
+   "sinfmlp","sinfb",
+   "reznoise",
+   "klangexp","klanglin"
+}
+
+Thebangs.options.stealModes={
+   "static","FIFO","LIFO","ignore"
+}
+
+
+-- Molly's Config
+
+local function format_ratio_to_one(param)
+  return util.round(param:get(),0.01) .. ":1"
+end
+
+local function format_fade(param)
+  local secs=param:get()
+  local suffix=" in"
+  if secs < 0 then
+    secs=secs - specs.LFO_FADE.minval
+    suffix=" out"
+  end
+  secs=util.round(secs,0.01)
+  return math.abs(secs) .. " s" .. suffix
+end
+
+local specs={}
+local options={}
+
+options.OSC_WAVE_SHAPE={"Triangle","Saw","Pulse"}
+specs.PW_MOD=controlspec.new(0,1,"lin",0,0.2,"")
+options.PW_MOD_SRC={"LFO","Env 1","Manual"}
+specs.FREQ_MOD_LFO=controlspec.UNIPOLAR
+specs.FREQ_MOD_ENV=controlspec.BIPOLAR
+specs.GLIDE=controlspec.new(0,5,"lin",0,0,"s")
+specs.MAIN_OSC_LEVEL=controlspec.new(0,1,"lin",0,1,"")
+specs.SUB_OSC_LEVEL=controlspec.UNIPOLAR
+specs.SUB_OSC_DETUNE=controlspec.new(-5,5,"lin",0,0,"ST")
+specs.NOISE_LEVEL=controlspec.new(0,1,"lin",0,0.1,"")
+specs.HP_FILTER_CUTOFF=controlspec.new(10,20000,"exp",0,10,"Hz")
+specs.LP_FILTER_CUTOFF=controlspec.new(20,20000,"exp",0,300,"Hz")
+specs.LP_FILTER_RESONANCE=controlspec.new(0,1,"lin",0,0.1,"")
+options.LP_FILTER_TYPE={"-12 dB/oct","-24 dB/oct"}
+options.LP_FILTER_ENV={"Env-1","Env-2"}
+specs.LP_FILTER_CUTOFF_MOD_ENV=controlspec.new(-1,1,"lin",0,0.25,"")
+specs.LP_FILTER_CUTOFF_MOD_LFO=controlspec.UNIPOLAR
+specs.LP_FILTER_TRACKING=controlspec.new(0,2,"lin",0,1,":1")
+specs.LFO_FREQ=controlspec.new(0.05,20,"exp",0,5,"Hz")
+options.LFO_WAVE_SHAPE={"Sine","Triangle","Saw","Square","Random"}
+specs.LFO_FADE=controlspec.new(-15,15,"lin",0,0,"s")
+specs.ENV_ATTACK=controlspec.new(0.002,5,"lin",0,0.01,"s")
+specs.ENV_DECAY=controlspec.new(0.002,10,"lin",0,0.3,"s")
+specs.ENV_SUSTAIN=controlspec.new(0,1,"lin",0,0.5,"")
+specs.ENV_RELEASE=controlspec.new(0.002,10,"lin",0,0.5,"s")
+specs.AMP=controlspec.new(0,11,"lin",0,0.5,"")
+specs.AMP_MOD=controlspec.UNIPOLAR
+specs.RING_MOD_FREQ=controlspec.new(10,300,"exp",0,50,"Hz")
+specs.RING_MOD_FADE=controlspec.new(-15,15,"lin",0,0,"s")
+specs.RING_MOD_MIX=controlspec.UNIPOLAR
+specs.CHORUS_MIX=controlspec.new(0,1,"lin",0,0.8,"")
+
 
 local Plonky={}
 
@@ -39,7 +115,7 @@ function Plonky:new(args)
   -- if you are using midigrid then first install in maiden with
   -- ;install https://github.com/jaggednz/midigrid
   -- and then comment out the following line:
-  -- local grid = include("midigrid/lib/midigrid")
+  -- local grid=include("midigrid/lib/midigrid")
   m.g=grid.connect()
   m.grid64=m.g.cols==8
   m.grid64default=true
@@ -84,7 +160,7 @@ function Plonky:new(args)
   for i=1,m.num_voices do
     m.voices[i]={
       voice_set=vs,
-      division=8,-- 8 = quartner notes
+      division=8,-- 8=quarter notes
       cluster={},
       pressed={},
       latched={},
@@ -160,8 +236,8 @@ function Plonky:new(args)
       }
       m.device[name].midi.event=function(data)
         local msg=midi.to_msg(data)
-        if msg.type=="clock" then 
-          do return end 
+        if msg.type=="clock" then
+          do return end
         end
         -- tab.print(msg)
         -- OP-1 fix for transport
@@ -260,16 +336,19 @@ function Plonky:setup_params()
   self.engine_options={"PolyPerc"}
   if mxsamples~=nil then
     table.insert(self.engine_options,"MxSamples")
-    -- table.insert(self.engine_options,"MxVoyage")
+  end
+  table.insert(self.engine_options,"MollyThePoly")
+  if thebangs_exists==true then
+    table.insert(self.engine_options,"Thebangs")
   end
   self.param_names={"scale","root","tuning","division","engine_enabled","midi","legato","crow","midichannel","midi in","midichannelin"}
   self.engine_params={}
   self.engine_params["MxSamples"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
   self.engine_params["PolyPerc"]={"pp_amp","pp_pw","pp_cut","pp_release"}
-  -- self.engine_params["MxVoyage"]={"mx_instrument","mx_velocity","mx_amp","mx_pan","mx_release","mx_attack"}
+  self.engine_params["MollyThePoly"]={"osc_wave_shape","pulse_width_mod","pulse_width_mod_src","freq_mod_lfo","freq_mod_env","mtp_glide","main_osc_level","sub_osc_level","sub_osc_detune","noise_level","hp_filter_cutoff","lp_filter_cutoff","lp_filter_resonance","lp_filter_type","lp_filter_env","lp_filter_mod_env","lp_filter_mod_lfo","lp_filter_tracking","lfo_freq","lfo_fade","lfo_wave_shape","env_1_attack","env_1_decay","env_1_sustain","env_1_release","env_2_attack","env_2_decay","env_2_sustain","env_2_release","mtp_amp","mtp_amp_mod","ring_mod_freq","ring_mod_fade","ring_mod_mix","chorus_mix"}
+  self.engine_params["Thebangs"]={"algo","steal_mode","steal_index","max_voices","b_attack","b_amp","b_pw","b_release","b_cutoff","b_gain","b_pan"}
 
-
-  params:add_group("PLONKY",27*self.num_voices+5)
+  params:add_group("PLONKY",74*self.num_voices+5)
   params:add{type="number",id="voice",name="voice",min=1,max=self.num_voices,default=1,action=function(v)
     self:reload_params(v)
     if not self.disable_menu_reload then
@@ -303,16 +382,72 @@ function Plonky:setup_params()
     -- MxSamples parameters
     params:add{type="option",id=i.."mx_instrument",name="instrument",options=self.instrument_list,default=1}
     params:add{type="number",id=i.."mx_velocity",name="velocity",min=0,max=127,default=80}
-    params:add {type='control',id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,2,'lin',0.01,0.5,'amp',0.01/2)}
+    params:add{type="control",id=i.."mx_amp",name="amp",controlspec=controlspec.new(0,2,'lin',0.01,0.5,'amp',0.01/2)}
     params:add{type="control",id=i.."mx_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0)}
-    params:add {type='control',id=i.."mx_attack",name="attack",controlspec=controlspec.new(0,10,'lin',0,0,'s')}
-    params:add {type='control',id=i.."mx_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
+    params:add{type="control",id=i.."mx_attack",name="attack",controlspec=controlspec.new(0,10,'lin',0,0,'s')}
+    params:add{type="control",id=i.."mx_release",name="release",controlspec=controlspec.new(0,10,'lin',0,2,'s')}
     -- PolyPerc parameters
     params:add{type="control",id=i.."pp_amp",name="amp",controlspec=controlspec.new(0,1,'lin',0,0.25,'')}
     params:add{type="control",id=i.."pp_pw",name="pw",controlspec=controlspec.new(0,100,'lin',0,50,'%')}
     params:add{type="control",id=i.."pp_release",name="release",controlspec=controlspec.new(0.1,3.2,'lin',0,1.2,'s')}
     params:add{type="control",id=i.."pp_cut",name="cutoff",controlspec=controlspec.new(50,5000,'exp',0,800,'hz')}
+    -- MollyThePoly parameters
+    params:add{type="option",id=i.."osc_wave_shape",name="Osc Wave Shape",options=options.OSC_WAVE_SHAPE,default=3}
+    params:add{type="control",id=i.."pulse_width_mod",name="Pulse Width Mod",controlspec=specs.PW_MOD}
+    params:add{type="option",id=i.."pulse_width_mod_src",name="Pulse Width Mod Src",options=options.PW_MOD_SRC}
+    params:add{type="control",id=i.."freq_mod_lfo",name="Frequency Mod (LFO)",controlspec=specs.FREQ_MOD_LFO}
+    params:add{type="control",id=i.."freq_mod_env",name="Frequency Mod (Env-1)",controlspec=specs.FREQ_MOD_ENV}
+    params:add{type="control",id=i.."mtp_glide",name="Glide",controlspec=specs.GLIDE,formatter=Formatters.format_secs}
+    params:add{type="control",id=i.."main_osc_level",name="Main Osc Level",controlspec=specs.MAIN_OSC_LEVEL}
+    params:add{type="control",id=i.."sub_osc_level",name="Sub Osc Level",controlspec=specs.SUB_OSC_LEVEL}
+    params:add{type="control",id=i.."sub_osc_detune",name="Sub Osc Detune",controlspec=specs.SUB_OSC_DETUNE}
+    params:add{type="control",id=i.."noise_level",name="Noise Level",controlspec=specs.NOISE_LEVEL,action=engine.noiseLevel}
+    params:add{type="control",id=i.."hp_filter_cutoff",name="HP Filter Cutoff",controlspec=specs.HP_FILTER_CUTOFF,formatter=Formatters.format_freq}
+    params:add{type="control",id=i.."lp_filter_cutoff",name="LP Filter Cutoff",controlspec=specs.LP_FILTER_CUTOFF,formatter=Formatters.format_freq}
+    params:add{type="control",id=i.."lp_filter_resonance",name="LP Filter Resonance",controlspec=specs.LP_FILTER_RESONANCE}
+    params:add{type="option",id=i.."lp_filter_type",name="LP Filter Type",options=options.LP_FILTER_TYPE,default=2}
+    params:add{type="option",id=i.."lp_filter_env",name="LP Filter Env",options=options.LP_FILTER_ENV}
+    params:add{type="control",id=i.."lp_filter_mod_env",name="LP Filter Mod (Env)",controlspec=specs.LP_FILTER_CUTOFF_MOD_ENV}
+    params:add{type="control",id=i.."lp_filter_mod_lfo",name="LP Filter Mod (LFO)",controlspec=specs.LP_FILTER_CUTOFF_MOD_LFO}
+    params:add{type="control",id=i.."lp_filter_tracking",name="LP Filter Tracking",controlspec=specs.LP_FILTER_TRACKING,formatter=format_ratio_to_one}
+    params:add{type="control",id=i.."lfo_freq",name="LFO Frequency",controlspec=specs.LFO_FREQ,formatter=Formatters.format_freq}
+    params:add{type="option",id=i.."lfo_wave_shape",name="LFO Wave Shape",options=options.LFO_WAVE_SHAPE}
+    params:add{type="control",id=i.."lfo_fade",name="LFO Fade",controlspec=specs.LFO_FADE,formatter=format_fade,action=function(v)
+      if v<0 then v=specs.LFO_FADE.minval-0.00001+math.abs(v) end
+        engine.lfoFade(v)
+      end}
+    params:add{type="control",id=i.."env_1_attack",name="Env-1 Attack",controlspec=specs.ENV_ATTACK,formatter=Formatters.format_secs}
+    params:add{type="control",id=i.."env_1_decay",name="Env-1 Decay",controlspec=specs.ENV_DECAY,formatter=Formatters.format_secs}
+    params:add{type="control",id=i.."env_1_sustain",name="Env-1 Sustain",controlspec=specs.ENV_SUSTAIN}
+    params:add{type="control",id=i.."env_1_release",name="Env-1 Release",controlspec=specs.ENV_RELEASE,formatter=Formatters.format_secs}
+    params:add{type="control",id=i.."env_2_attack",name="Env-2 Attack",controlspec=specs.ENV_ATTACK,formatter=Formatters.format_secs}
+    params:add{type="control",id=i.."env_2_decay",name="Env-2 Decay",controlspec=specs.ENV_DECAY,formatter=Formatters.format_secs}
+    params:add{type="control",id=i.."env_2_sustain",name="Env-2 Sustain",controlspec=specs.ENV_SUSTAIN}
+    params:add{type="control",id=i.."env_2_release",name="Env-2 Release",controlspec=specs.ENV_RELEASE,formatter=Formatters.format_secs}
+    params:add{type="control",id=i.."mtp_amp",name="Amp",controlspec=specs.AMP}
+    params:add{type="control",id=i.."mtp_amp_mod",name="Amp Mod (LFO)",controlspec=specs.AMP_MOD}
+    params:add{type="control",id=i.."ring_mod_freq",name="Ring Mod Frequency",controlspec=specs.RING_MOD_FREQ,formatter=Formatters.format_freq}
+    params:add{type="control",id=i.."ring_mod_fade",name="Ring Mod Fade",controlspec=specs.RING_MOD_FADE,formatter=format_fade,action=function(v)
+      if v<0 then v=specs.RING_MOD_FADE.minval-0.00001+math.abs(v) end
+        engine.ringModFade(v)
+      end}
+    params:add{type="control",id=i.."ring_mod_mix",name="Ring Mod Mix",controlspec=specs.RING_MOD_MIX}
+    params:add{type="control",id=i.."chorus_mix",name="Chorus Mix",controlspec=specs.CHORUS_MIX}
+    -- Thebangs parameters
+    params:add{type="option",id=i.."algo",name="algo",default=1,options=Thebangs.options.algoNames}
+    params:add{type="option",id=i.."steal_mode",name="steal mode",default=2,options=Thebangs.options.stealModes}
+    params:add{type="number",id=i.."steal_index",name="steal index",min=0,max=32,default=0}
+    params:add{type="number",id=i.."max_voices",name="max voices",min=1,max=32,default=32}
+    params:add{type="control",id=i.."b_attack",name="attack",controlspec=controlspec.new(0.0001,1,'exp',0,0.01,'')}
+    params:add{type="control",id=i.."b_amp",name="amp",controlspec=controlspec.new(0,1,'lin',0,0.5,'')}
+    params:add{type="control",id=i.."b_pw",name="pw",controlspec=controlspec.new(0,100,'lin',0,50,'%')}
+    params:add{type="control",id=i.."b_release",name="release",controlspec=controlspec.new(0.1,3.2,'lin',0,1.2,'s')}
+    params:add{type="control",id=i.."b_cutoff",name="cutoff",controlspec=controlspec.new(50,5000,'exp',0,800,'hz')}
+    params:add{type="control",id=i.."b_gain",name="gain",controlspec=controlspec.new(0,4,'lin',0,1,'')}
+    params:add{type="control",id=i.."b_pan",name="pan",controlspec=controlspec.new(-1,1,'lin',0,0,'')}
+
   end
+
   params:add_separator("plonky")
   for i=1,self.num_voices do
     params:add{type="option",id=i.."scale",name="scale",options=self.scale_names,default=1,action=function(v)
@@ -377,7 +512,7 @@ function Plonky:setup_params()
     params:hide(i.."latch_steps")
   end
   params:add{type="option",id="mandoengine",name="engine",options=self.engine_options,action=function()
-    self.updateengine=4
+    self.updateengine=10
   end}
   params:add{type="option",id="midi_transport",name="midi transport",options=self.device_list,default=1}
 
@@ -387,8 +522,8 @@ function Plonky:setup_params()
     local content=f:read("*all")
     f:close()
     print(content)
-    local last_engine = tonumber(content)
-    if last_engine ~= nil then
+    local last_engine=tonumber(content)
+    if last_engine~=nil then
     	params:set("mandoengine",last_engine)
     end
   end
@@ -419,13 +554,13 @@ function Plonky:build_scale()
         if i%2==0 then
           k_=k_+8
         end
-        local note = self:get_note_from_pos(i,j,k_)
-        if note ~=nil then
+        local note=self:get_note_from_pos(i,j,k_)
+        if note~=nil then
           if self.voices[i].note_to_pos[note]==nil then
             self.voices[i].note_to_pos[note]={}
           end
           table.insert(self.voices[i].note_to_pos[note],{j,k_})
-        end        
+        end
       end
     end
   end
@@ -548,7 +683,7 @@ end
 
 
 function Plonky:get_visual()
-  -- clear visual, decaying the ntoes
+  -- clear visual,decaying the notes
   for row=1,8 do
     for col=1,self.grid_width do
       if self.visual[row][col]>0 then
@@ -710,20 +845,20 @@ function Plonky:key_press(row,col,on)
 end
 
 function Plonky:press_midi_note(name,channel,note,velocity,on)
-  if self.debug then 
+  if self.debug then
     print("midi_note",name,channel,note,velocity,on)
   end
   -- WORK
-  for i=1,self.num_voices do 
+  for i=1,self.num_voices do
     if i==self.voice_set+1 or i==self.voice_set+2 then
       if self.debug then
         print(i,name,self.device_list[params:get(i.."midi in")])
       end
       if name==self.device_list[params:get(i.."midi in")] and channel==params:get(i.."midichannelin") then
-        local positions = self.voices[i].note_to_pos[note]
-        if positions ~= nil then 
+        local positions=self.voices[i].note_to_pos[note]
+        if positions~=nil then
           self:key_press(positions[1][1],positions[1][2],on)
-        end      
+        end
       end
     end
   end
@@ -780,6 +915,62 @@ function Plonky:press_note(voice_set,row,col,on,is_finger)
         engine.release(params:get(voice.."pp_release"))
         engine.cutoff(params:get(voice.."pp_cut"))
         engine.pw(params:get(voice.."pp_pw")/100)
+        engine.hz(MusicUtil.note_num_to_freq(note))
+      end
+    elseif engine.name=="MollyThePoly" then
+      if on then
+        engine.oscWaveShape(params:get(voice.."osc_wave_shape")-1)
+        engine.pwMod(params:get(voice.."pulse_width_mod"))
+        engine.pwModSource(params:get(voice.."pulse_width_mod_src")-1)
+        engine.freqModEnv(params:get(voice.."freq_mod_env"))
+        engine.freqModLfo(params:get(voice.."freq_mod_lfo"))
+        engine.glide(params:get(voice.."mtp_glide"))
+        engine.mainOscLevel(params:get(voice.."main_osc_level"))
+        engine.subOscLevel(params:get(voice.."sub_osc_level"))
+        engine.subOscDetune(params:get(voice.."sub_osc_detune"))
+        engine.noiseLevel(params:get(voice.."noise_level"))
+        engine.hpFilterCutoff(params:get(voice.."hp_filter_cutoff"))
+        engine.lpFilterCutoff(params:get(voice.."lp_filter_cutoff"))
+        engine.lpFilterResonance(params:get(voice.."lp_filter_resonance"))
+        engine.lpFilterType(params:get(voice.."lp_filter_type")-1)
+        engine.lpFilterCutoffEnvSelect(params:get(voice.."lp_filter_env")-1)
+        engine.lpFilterCutoffModEnv(params:get(voice.."lp_filter_mod_env"))
+        engine.lpFilterCutoffModLfo(params:get(voice.."lp_filter_mod_lfo"))
+        engine.lpFilterTracking(params:get(voice.."lp_filter_tracking"))
+        engine.lfoFreq(params:get(voice.."lfo_freq"))
+        engine.lfoFade(params:get(voice.."lfo_fade"))
+        engine.lfoWaveShape(params:get(voice.."lfo_wave_shape")-1)
+        engine.env1Attack(params:get(voice.."env_1_attack"))
+        engine.env1Decay(params:get(voice.."env_1_decay"))
+        engine.env1Sustain(params:get(voice.."env_1_sustain"))
+        engine.env1Release(params:get(voice.."env_1_release"))
+        engine.env2Attack(params:get(voice.."env_2_attack"))
+        engine.env2Decay(params:get(voice.."env_2_decay"))
+        engine.env2Sustain(params:get(voice.."env_2_sustain"))
+        engine.env2Release(params:get(voice.."env_2_release"))
+        engine.amp(params:get(voice.."mtp_amp"))
+        engine.ampMod(params:get(voice.."mtp_amp_mod"))
+        engine.ringModFreq(params:get(voice.."ring_mod_freq"))
+        engine.ringModFade(params:get(voice.."ring_mod_fade"))
+        engine.ringModMix(params:get(voice.."ring_mod_mix"))
+        engine.chorusMix(params:get(voice.."chorus_mix"))
+        engine.noteOn(note,MusicUtil.note_num_to_freq(note),80) --hardcoding velocity
+      else
+        engine.noteOff(note)
+      end
+    elseif engine.name=="Thebangs" then
+      if on then
+        engine.algoIndex(params:get(voice.."algo"))
+        engine.stealMode(params:get(voice.."steal_mode")-1)
+        engine.stealIndex(params:get(voice.."steal_index"))
+        engine.maxVoices(params:get(voice.."max_voices"))
+        engine.attack(params:get(voice.."b_attack"))
+        engine.amp(params:get(voice.."b_amp"))
+        engine.pw(params:get(voice.."b_pw")/100)
+        engine.release(params:get(voice.."b_release"))
+        engine.cutoff(params:get(voice.."b_cutoff"))
+        engine.gain(params:get(voice.."b_gain"))
+        engine.pan(params:get(voice.."b_pan"))
         engine.hz(MusicUtil.note_num_to_freq(note))
       end
     end
